@@ -1,84 +1,44 @@
 angular.module("wcom_filters", [])
-.service('wcom_scripts', function($compile, $rootScope){
+.filter('toArr', function(){
 	"ngInject";
-	this.modals = [];
-	this.modal = function(obj){
-		if(!obj.id) obj.id = Date.now();
-		let modal = '<wmodal id="'+obj.id+'">';
-		if(obj.template) modal += obj.template;
-		else if(obj.templateUrl){
-			modal += '<ng-include src="';
-			modal += "'"+obj.templateUrl+"'";
-			modal += '" ng-controller="wparent"></ng-include>';
+	return function(str, div){
+		if(!str) return [];
+		str=str.rAll(', ',',')
+		var arr = str.split(div||',');
+		for (var i = arr.length - 1; i >= 0; i--) {
+			if(!arr[i]) arr.splice(i, 1);
 		}
-		modal += '</wmodal>';
-		this.modals.push(obj);
-		let body = angular.element(document).find('body').eq(0);
-		body.append($compile(angular.element(modal))($rootScope));
-		angular.element(document).find('html').addClass('bodynoscroll');
+		return arr;
 	}
-	this.spinners = [];
-	this.spinner = function(obj){
-		if(!obj.id) obj.id = Date.now();
-		var spinner = '<wspinner id="'+obj.id+'">';
-		spinner += '</wspinner>';
-		this.spinners.push(obj);
-		document.body.innerHTML += spinner;
+}).filter('mongodate', function(){
+	"ngInject";
+	return function(_id){
+		if(!_id) return new Date();
+		var timestamp = _id.toString().substring(0,8);
+		return new Date(parseInt(timestamp,16)*1000);
 	}
-}).directive('wcom_wmodal', function(wmodal) {
+}).filter('fixlink', function(){
 	"ngInject";
-	return {
-		restrict: 'E',
-		transclude: true,
-		scope: {
-			id: '@'
-		}, link: function(scope, el){
-			scope.close = function(){
-				for (var i = 0; i < wmodal.modals.length; i++) {
-					if(wmodal.modals[i].id==scope.id){
-						wmodal.modals.splice(i, 1);
-						break;
-					}
-				}
-				if(wmodal.modals.length == 0){
-					angular.element(document).find('html').removeClass('bodynoscroll');
-				}
-				if(scope.cb) scope.cb();
-				el.remove();
-			}
-			for (var i = 0; i < wmodal.modals.length; i++) {
-				if(wmodal.modals[i].id==scope.id){
-					wmodal.modals[i].close = scope.close;
-					scope._data = wmodal.modals[i];
-					for(var key in wmodal.modals[i]){
-						scope[key] = wmodal.modals[i][key];
-					}
-					break;
-				}
-			}
-		}, templateUrl: 'wmodal_modal.html'
-	};
-}).controller('wcom_wparent', function($scope, $timeout) {
+	return function(link){
+		if(!link||link.indexOf('//')>0) return link;
+		else return 'http://'+link;
+	}
+}).filter('messagetime', function($filter){
 	"ngInject";
-	$timeout(function(){
-		if($scope.$parent.$parent._data){
-			for (var key in $scope.$parent.$parent._data) {
-				$scope[key] = $scope.$parent.$parent._data[key];
-			}
+	return function(time){
+		time = new Date(time);
+		var timems = time.getTime();
+		var nowms = new Date().getTime();
+		var minago = nowms - 60000;
+		if(timems>minago) return 'A min ago.';
+		var dayms = nowms - 86400000;
+		if(timems>dayms){
+			return $filter('date')(time, 'hh:mm a');
 		}
-		if($scope.$parent._data){
-			for (var key in $scope.$parent._data) {
-				$scope[key] = $scope.$parent._data[key];
-			}
+		var yearms = nowms - (2628000000*12);
+		if(timems>yearms){
+			return $filter('date')(time, 'MMM dd hh:mm a');
 		}
-	});
-}).directive('wcom_wspinner', function() {
-	return {
-		restrict: 'E',
-		transclude: true,
-		scope: {
-			id: '@'
-		},
-		templateUrl: 'wmodal_spinner.html'
-	};
+		return $filter('date')(time, 'yyyy MMM dd hh:mm a');
+	}
 });
