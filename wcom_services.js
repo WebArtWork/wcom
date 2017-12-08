@@ -21,41 +21,42 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 	}
 }).service('mongo', function($http, $timeout){
 	var self = this;
-	this.pulled = {};
+	this.cl = {}; // collection
+	this.clp = {}; // collection pulled boolean
 	this.get = function(part){
 		$http.get('/api/'+part+'/get').then(function(resp){
 			if(Array.isArray(resp.data)){
 				for (var i = 0; i < resp.data.length; i++) {
-					self[part].push(resp.data[i]);
+					self.cl[part].push(resp.data[i]);
 				}
 			}
-			self.pulled[part] = true;
+			self.clp[part] = true;
 		}, function(err){
 			console.log(err);
 		});
-		if(!Array.isArray(self[part])) self[part] = [];
-		return self[part];
+		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
+		return self.cl[part];
 	}
 	this.retrieve = function(part){
-		if(!Array.isArray(self[part])) self[part] = [];
-		return self[part];
+		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
+		return self.cl[part];
 	}
 	this.populate = function(toPart, fromPart, toField, fields){
-		if(!self.pulled[toPart]||!self.pulled[fromPart]){
+		if(!self.clp[toPart]||!self.clp[fromPart]){
 			return $timeout(function(){
 				self.populate(toPart, fromPart, toField, fields);
 			}, 250);
 		}
-		for (var i = 0; i < self[toPart].length; i++) {
-			if(typeof self[toPart][i].toField == 'string') continue;
-			for (var j = 0; j < self[fromPart].length; j++) {
-				if(self[fromPart][j]._id == self[toPart][i].toField){
+		for (var i = 0; i < self.cl[toPart].length; i++) {
+			if(typeof self.cl[toPart][i].toField == 'string') continue;
+			for (var j = 0; j < self.cl[fromPart].length; j++) {
+				if(self.cl[fromPart][j]._id == self.cl[toPart][i].toField){
 					if(fields){
-						self[toPart][i].toField={};
+						self.cl[toPart][i].toField={};
 						for(var key in fields){
-							self[toPart][i].toField[key]=self[fromPart][j][key];
+							self.cl[toPart][i].toField[key]=self.cl[fromPart][j][key];
 						}
-					}else self[toPart][i].toField=self[fromPart][j];
+					}else self.cl[toPart][i].toField=self.cl[fromPart][j];
 					break;
 				}
 			}
