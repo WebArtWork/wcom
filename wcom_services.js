@@ -19,9 +19,9 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			self.addDelay(opts, cb);
 		}
 	}
-}).service('mongo', function($http){
+}).service('mongo', function($http, $timeout){
 	var self = this;
-	this.collections = [];
+	this.pulled = {};
 	this.get = function(part){
 		$http.get('/api/'+part+'/get').then(function(resp){
 			if(Array.isArray(resp.data)){
@@ -29,10 +29,37 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 					self[part].push(resp.data[i]);
 				}
 			}
+			self.pulled[part] = true;
 		}, function(err){
 			console.log(err);
 		});
-		return self[part] = [];
+		if(!Array.isArray(self[part])) self[part] = [];
+		return self[part];
+	}
+	this.retrieve = function(part){
+		if(!Array.isArray(self[part])) self[part] = [];
+		return self[part];
+	}
+	this.populate = function(toPart, fromPart, toField, fields){
+		if(!self.pulled[toPart]||!self.pulled[fromPart]){
+			return $timeout(function(){
+				self.populate(toPart, fromPart, toField, fields);
+			}, 250);
+		}
+		for (var i = 0; i < self[toPart].length; i++) {
+			if(typeof self[toPart][i].toField == 'string') continue;
+			for (var j = 0; j < self[fromPart].length; j++) {
+				if(self[fromPart][j]._id == self[toPart][i].toField){
+					if(fields){
+						self[toPart][i].toField={};
+						for(var key in fields){
+							self[toPart][i].toField[key]=self[fromPart][j][key];
+						}
+					}else self[toPart][i].toField=self[fromPart][j];
+					break;
+				}
+			}
+		}
 	}
 	this.create = function(part, obj, callback){
 		$http.post('/api/'+part+'/create', obj||{})
