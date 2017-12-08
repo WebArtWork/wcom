@@ -21,6 +21,8 @@ angular.module("wcom_services", [])
 			self.addDelay(opts, cb);
 		}
 	}
+}).service('mongo', function(){
+	this.collections = [];
 }).service('img', function(){
 	"ngInject";
 	this.fileToDataUrl = function(file, callback){
