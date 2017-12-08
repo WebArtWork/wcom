@@ -2,12 +2,12 @@ angular.module("wcom_directives", [])
 .directive('pullfiles', function(){
 	"ngInject";
 	return{
-		restrict: 'E',
+		restrict: 'E', scope: true, replace: true,
 		controller: function($scope, img, $timeout, fm){
 			var inputs = $scope.inputs = [];
 			fm.addDelay = function(opts, cb){
 				if(typeof cb != 'function' || !opts._id) return;
-				if(!opts.multiple) opts.multiple = false;
+				opts.multiple = !!opts.multiple;
 				inputs.push(opts);
 				$timeout(function(){
 					if(opts.multiple){
@@ -24,20 +24,22 @@ angular.module("wcom_directives", [])
 						}
 						angular.element(document.getElementById(opts._id))
 						.bind('change', function(evt) {
-							for (var i = 0; i < evt.currentTarget.files.length; i++) {
-								addImage(evt.currentTarget.files[i]);
+							var target = evt.currentTarget || evt.target;
+							for (var i = 0; i < target.files.length; i++) {
+								addImage(target.files[i]);
 							}
 						});
 					}else{
 						angular.element(document.getElementById(opts._id))
 						.bind('change', function(evt) {
+							var target = evt.currentTarget || evt.target;
 							img.resizeUpTo({
-								file: evt.currentTarget.files[0],
+								file: target.files[0],
 								width: opts.width||1920,
 								height: opts.height||1080
 							}, function(dataUrl) {
 								$timeout(function(){
-									cb(dataUrl, evt.currentTarget.files[0]);
+									cb(dataUrl, target.files[0]);
 								});
 							});
 						});

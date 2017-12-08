@@ -1,14 +1,13 @@
 angular.module("wcom", ["wcom_services", "wcom_filters", "wcom_directives"]);
-angular.module("wcom_services", [])
-.service('socket', function(){
+angular.module("wcom_services", []).run(function($rootScope, $compile){
+	let body = angular.element(document).find('body').eq(0);
+	body.append($compile(angular.element('<pullfiles></pullfiles>'))($rootScope));
+}).service('socket', function(){
 	"ngInject";
 	if(!io) return {};
 	var loc = window.location.host;
 	var socket = io.connect(loc);
 	return socket;
-}).run(function($rootScope, $compile){
-	let body = angular.element(document).find('body').eq(0);
-	body.append($compile(angular.element('<pullfiles></pullfiles>'))($rootScope));
 }).service('fm', function($timeout){
 	"ngInject";
 	var self = this;
@@ -21,8 +20,63 @@ angular.module("wcom_services", [])
 			self.addDelay(opts, cb);
 		}
 	}
-}).service('mongo', function(){
+}).service('mongo', function($http){
+	var self = this;
 	this.collections = [];
+	this.get = function(part){
+		$http.get('/api/'+part+'/get').then(function(resp){
+			if(Array.isArray(resp.data)){
+				for (var i = 0; i < resp.data.length; i++) {
+					self[part].push(resp.data[i]);
+				}
+			}
+		}, function(err){
+			console.log(err);
+		});
+		return self[part] = [];
+	}
+	this.create = function(part, obj, callback){
+		$http.post('/api/'+part+'/create', obj||{})
+		.then(function(resp){
+			if(resp.data&&typeof callback == 'function'){
+				callback(resp.data);
+			}else if(typeof callback == 'function'){
+				callback(false);
+			}
+		});
+	}
+	this.update = function(part, obj, callback){
+		if(!obj) return;
+		$timeout.cancel(obj.updateTimeout);
+		if(!obj.name) obj.name='';
+		if(socket) obj.print = socket.id;
+		$http.post('/api/'+part+'/update'+obj.name, obj)
+		.then(function(resp){
+			if(resp.data&&typeof callback == 'function'){
+				callback(resp.data);
+			}else if(typeof callback == 'function'){
+				callback(false);
+			}
+		});		
+	}
+	this.updateAfterWhile = function(part, obj, callback){
+		$timeout.cancel(obj.updateTimeout);
+		obj.updateTimeout = $timeout(function(){
+			self.update(part, obj, callback);
+		}, 1000);
+	}
+	this.delete = function(part, obj, callback){
+		if(!obj) return;
+		if(socket) obj.print = socket.id;
+		$http.post('/api/'+part+'/delete', obj)
+		.then(function(resp){
+			if(resp.data&&typeof callback == 'function'){
+				callback(resp.data);
+			}else if(typeof callback == 'function'){
+				callback(false);
+			}
+		});
+	}
 }).service('img', function(){
 	"ngInject";
 	this.fileToDataUrl = function(file, callback){
@@ -111,12 +165,12 @@ angular.module("wcom_directives", [])
 .directive('pullfiles', function(){
 	"ngInject";
 	return{
-		restrict: 'E',
+		restrict: 'E', scope: true, replace: true,
 		controller: function($scope, img, $timeout, fm){
 			var inputs = $scope.inputs = [];
 			fm.addDelay = function(opts, cb){
 				if(typeof cb != 'function' || !opts._id) return;
-				if(!opts.multiple) opts.multiple = false;
+				opts.multiple = !!opts.multiple;
 				inputs.push(opts);
 				$timeout(function(){
 					if(opts.multiple){
@@ -133,20 +187,22 @@ angular.module("wcom_directives", [])
 						}
 						angular.element(document.getElementById(opts._id))
 						.bind('change', function(evt) {
-							for (var i = 0; i < evt.currentTarget.files.length; i++) {
-								addImage(evt.currentTarget.files[i]);
+							var target = evt.currentTarget || evt.target;
+							for (var i = 0; i < target.files.length; i++) {
+								addImage(target.files[i]);
 							}
 						});
 					}else{
 						angular.element(document.getElementById(opts._id))
 						.bind('change', function(evt) {
+							var target = evt.currentTarget || evt.target;
 							img.resizeUpTo({
-								file: evt.currentTarget.files[0],
+								file: target.files[0],
 								width: opts.width||1920,
 								height: opts.height||1080
 							}, function(dataUrl) {
 								$timeout(function(){
-									cb(dataUrl, evt.currentTarget.files[0]);
+									cb(dataUrl, target.files[0]);
 								});
 							});
 						});
