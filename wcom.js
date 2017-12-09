@@ -170,6 +170,33 @@ angular.module("wcom_filters", [])
 		if(!link||link.indexOf('//')>0) return link;
 		else return 'http://'+link;
 	}
+}).filter('wdate', function($filter){
+	"ngInject";
+	return function(time, addYear, addMonth, addDay){
+		time = new Date(time);
+		if(addYear){
+			time.setFullYear(time.getFullYear() + parseInt(addYear));
+		}
+		if(addMonth){
+			time.setMonth(time.getMonth() + parseInt(addMonth));
+		}
+		if(addDay){
+			time.setDate(time.getDate() + parseInt(addDay));
+		}
+		var timems = time.getTime();
+		var nowms = new Date().getTime();
+		var dayms = nowms - 86400000;
+		console.log(timems);
+		console.log(dayms);
+		if(timems>dayms){
+			return $filter('date')(time, 'hh:mm a');
+		}
+		var yearms = nowms - (2628000000*12);
+		if(timems>yearms){
+			return $filter('date')(time, 'MMM dd hh:mm a');
+		}
+		return $filter('date')(time, 'yyyy MMM dd hh:mm a');
+	}
 }).filter('messagetime', function($filter){
 	"ngInject";
 	return function(time){
