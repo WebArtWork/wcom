@@ -32,7 +32,23 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			});
 		}
 	}
-	this.get = function(part, rpl){
+	this.push = function(part, doc, rpl){
+		if(rpl){
+			for(var key in rpl){
+				replace(doc, key, rpl[key]);
+			}
+		}
+		Array.isArray(self.cl[part])&&self.cl[part].push(doc);
+	}
+	this.unshift = function(part, doc, rpl){
+		if(rpl){
+			for(var key in rpl){
+				replace(doc, key, rpl[key]);
+			}
+		}		
+		Array.isArray(self.cl[part])&&self.cl[part].unshift(doc);
+	}
+	this.get = function(part, rpl, sort){
 		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
 		if(self.clp[part]) return self.cl[part];
 		self.clp[part] = true;
@@ -47,6 +63,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 					}
 				}
 			}
+			if(sort) self.cl[part].sort(sort);
 			self.clpc[part] = true;
 		}, function(err){
 			console.log(err);
@@ -135,6 +152,11 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 				callback(false);
 			}
 		});
+	}
+	// doc fill
+	this.beArray = function(val, cb){
+		if(!Array.isArray(val)) cb([]);
+		else cb(val);
 	}
 }).service('img', function(){
 	"ngInject";
