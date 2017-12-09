@@ -23,45 +23,76 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 }).service('mongo', function($http, $timeout){
 	var self = this;
 	this.cl = {}; // collection
+	this.clpc = {}; // complete collection pulled boolean
 	this.clp = {}; // collection pulled boolean
-	this.get = function(part){
+	var replace = function(doc, value, rpl){
+		if(typeof rpl == 'function'){
+			rpl(doc[value], function(newValue){
+				doc[value] = newValue;
+			});
+		}
+	}
+	this.get = function(part, rpl){
+		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
+		if(self.clp[part]) return self.cl[part];
+		self.clp[part] = true;
 		$http.get('/api/'+part+'/get').then(function(resp){
 			if(Array.isArray(resp.data)){
 				for (var i = 0; i < resp.data.length; i++) {
 					self.cl[part].push(resp.data[i]);
+					if(rpl){
+						for(var key in rpl){
+							replace(resp.data[i], key, rpl[key]);
+						}
+					}
 				}
 			}
-			self.clp[part] = true;
+			self.clpc[part] = true;
 		}, function(err){
 			console.log(err);
 		});
-		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
 		return self.cl[part];
 	}
-	this.retrieve = function(part){
-		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
-		return self.cl[part];
+	this.run = function(parts, cb){
+		if(Array.isArray(parts)){
+			for (var i = 0; i < parts.length; i++) {
+				if (!self.clpc[parts[i]]) {
+					return $timeout(function() {
+						self.run(parts, cb);
+					}, 250);
+				}
+			}
+		}else if(typeof parts == 'string'){
+			if (!self.clpc[parts]) {
+				return $timeout(function() {
+					self.run(parts, cb);
+				}, 250);
+			}
+		}
+		cb();
 	}
-	this.populate = function(toPart, fromPart, toField, fields){
-		if(!self.clp[toPart]||!self.clp[fromPart]){
+	this.populate = function(toPart, fromPart, toField, fields, cb){
+		if(typeof fields == 'function') cb = fields;
+		if(!self.clpc[toPart]||!self.clpc[fromPart]){
 			return $timeout(function(){
-				self.populate(toPart, fromPart, toField, fields);
+				self.populate(toPart, fromPart, toField, fields, cb);
 			}, 250);
 		}
 		for (var i = 0; i < self.cl[toPart].length; i++) {
-			if(typeof self.cl[toPart][i].toField == 'string') continue;
+			if(typeof self.cl[toPart][i][toField] != 'string') continue;
 			for (var j = 0; j < self.cl[fromPart].length; j++) {
-				if(self.cl[fromPart][j]._id == self.cl[toPart][i].toField){
-					if(fields){
-						self.cl[toPart][i].toField={};
+				if(self.cl[fromPart][j]._id == self.cl[toPart][i][toField]){
+					if(fields&&typeof fields!='function'){
+						self.cl[toPart][i][toField]={};
 						for(var key in fields){
-							self.cl[toPart][i].toField[key]=self.cl[fromPart][j][key];
+							self.cl[toPart][i][toField][key]=self.cl[fromPart][j][key];
 						}
-					}else self.cl[toPart][i].toField=self.cl[fromPart][j];
+					}else self.cl[toPart][i][toField]=self.cl[fromPart][j];
 					break;
 				}
 			}
 		}
+		cb&&cb();
 	}
 	this.create = function(part, obj, callback){
 		$http.post('/api/'+part+'/create', obj||{})
