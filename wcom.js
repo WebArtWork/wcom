@@ -48,11 +48,15 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		}		
 		Array.isArray(self.cl[part])&&self.cl[part].unshift(doc);
 	}
-	this.get = function(part, rpl, sort){
+	this.get = function(part, rpl, opts){
 		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
 		if(self.clp[part]) return self.cl[part];
 		self.clp[part] = true;
-		$http.get('/api/'+part+'/get').then(function(resp){
+		let pull;
+		if(opts&&opts.query){
+			pull = $http.get('/api/'+part+'/'+opts.query);
+		}else pull = $http.get('/api/'+part+'/get');
+		pull.then(function(resp){
 			if(Array.isArray(resp.data)){
 				for (var i = 0; i < resp.data.length; i++) {
 					self.cl[part].push(resp.data[i]);
@@ -63,7 +67,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 					}
 				}
 			}
-			if(sort) self.cl[part].sort(sort);
+			if(opts&&opts.sort) self.cl[part].sort(opts.sort);
 			self.clpc[part] = true;
 		}, function(err){
 			console.log(err);
@@ -198,12 +202,16 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		reader.readAsDataURL(info.file);
 	}
 });
+String.prototype.rAll = function(search, replacement) {
+    var target = this;
+    return target.split(search).join(replacement);
+};
 angular.module("wcom_filters", [])
 .filter('toArr', function(){
 	"ngInject";
 	return function(str, div){
 		if(!str) return [];
-		str=str.rAll(', ',',')
+		str=str.split((div||',')+' ').join(',');
 		var arr = str.split(div||',');
 		for (var i = arr.length - 1; i >= 0; i--) {
 			if(!arr[i]) arr.splice(i, 1);

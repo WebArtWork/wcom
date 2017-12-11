@@ -47,11 +47,15 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		}		
 		Array.isArray(self.cl[part])&&self.cl[part].unshift(doc);
 	}
-	this.get = function(part, rpl, sort){
+	this.get = function(part, rpl, opts){
 		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
 		if(self.clp[part]) return self.cl[part];
 		self.clp[part] = true;
-		$http.get('/api/'+part+'/get').then(function(resp){
+		let pull;
+		if(opts&&opts.query){
+			pull = $http.get('/api/'+part+'/'+opts.query);
+		}else pull = $http.get('/api/'+part+'/get');
+		pull.then(function(resp){
 			if(Array.isArray(resp.data)){
 				for (var i = 0; i < resp.data.length; i++) {
 					self.cl[part].push(resp.data[i]);
@@ -62,7 +66,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 					}
 				}
 			}
-			if(sort) self.cl[part].sort(sort);
+			if(opts&&opts.sort) self.cl[part].sort(opts.sort);
 			self.clpc[part] = true;
 		}, function(err){
 			console.log(err);

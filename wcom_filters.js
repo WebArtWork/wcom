@@ -1,9 +1,13 @@
+String.prototype.rAll = function(search, replacement) {
+    var target = this;
+    return target.split(search).join(replacement);
+};
 angular.module("wcom_filters", [])
 .filter('toArr', function(){
 	"ngInject";
 	return function(str, div){
 		if(!str) return [];
-		str=str.rAll(', ',',')
+		str=str.split((div||',')+' ').join(',');
 		var arr = str.split(div||',');
 		for (var i = arr.length - 1; i >= 0; i--) {
 			if(!arr[i]) arr.splice(i, 1);
