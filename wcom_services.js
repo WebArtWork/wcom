@@ -91,6 +91,26 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		}
 		cb();
 	}
+	this.fill = function(obj, fromPart, toField, fields, cb){
+		if(typeof fields == 'function') cb = fields;
+		if(!self.clpc[fromPart]){
+			return $timeout(function(){
+				self.populate(obj, fromPart, toField, fields, cb);
+			}, 250);
+		}
+		for (var j = 0; j < self.cl[fromPart].length; j++) {
+			if(self.cl[fromPart][j]._id == obj[toField]){
+				if(fields&&typeof fields!='function'){
+					obj[toField]={};
+					for(var key in fields){
+						obj[toField][key]=self.cl[fromPart][j][key];
+					}
+				}else obj[toField]=self.cl[fromPart][j];
+				break;
+			}
+		}
+		cb&&cb();
+	}
 	this.populate = function(toPart, fromPart, toField, fields, cb){
 		if(typeof fields == 'function') cb = fields;
 		if(!self.clpc[toPart]||!self.clpc[fromPart]){
