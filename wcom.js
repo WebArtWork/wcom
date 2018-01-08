@@ -413,8 +413,6 @@ angular.module("wcom_filters", [])
 		var timems = time.getTime();
 		var nowms = new Date().getTime();
 		var dayms = nowms - 86400000;
-		console.log(timems);
-		console.log(dayms);
 		if(timems>dayms){
 			return $filter('date')(time, 'hh:mm a');
 		}
