@@ -2,9 +2,9 @@ angular.module("wcom", ["wcom_services", "wcom_filters", "wcom_directives"]);
 angular.module("wcom_services", []).run(function($rootScope, $compile){
 	let body = angular.element(document).find('body').eq(0);
 	body.append($compile(angular.element('<pullfiles></pullfiles>'))($rootScope));
-}).service('socket', function(){
+}).factory('socket', function(){
 	"ngInject";
-	if(!io) return {};
+	if(typeof io != 'object') return {};
 	var loc = window.location.host;
 	var socket = io.connect(loc);
 	return socket;
@@ -148,7 +148,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}
 		}
 	}
-}).service('mongo', function($http, $timeout){
+}).service('mongo', function($http, $timeout, socket){
 	var self = this;
 	this.cl = {}; // collection
 	this.clpc = {}; // complete collection pulled boolean
@@ -201,6 +201,14 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			console.log(err);
 		});
 		return self.cl[part];
+	}
+	this.use = function(part, cb){
+		if(!self.clpc[part]){
+			return $timeout(function(){
+				self.use(part, cb);
+			}, 250);
+		}
+		return cb(self.cl[part]);
 	}
 	this.run = function(parts, cb){
 		if(Array.isArray(parts)){
@@ -273,19 +281,28 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}
 		});
 	}
-	this.update = function(part, obj, callback){
+	this.update = function(part, obj, cb){
 		if(!obj) return;
 		$timeout.cancel(obj.updateTimeout);
 		if(!obj.name) obj.name='';
 		if(socket) obj.print = socket.id;
 		$http.post('/api/'+part+'/update'+obj.name, obj)
 		.then(function(resp){
-			if(resp.data&&typeof callback == 'function'){
-				callback(resp.data);
-			}else if(typeof callback == 'function'){
-				callback(false);
+			if(resp.data&&typeof cb == 'function'){
+				cb(resp.data);
+			}else if(typeof cb == 'function'){
+				cb(false);
 			}
-		});		
+		});
+	}
+	this.updateAll = function(part, obj, cb){
+		$http.post('/api/'+part+'/update/all'+(obj.name||''), obj).then(function(resp){
+			if(resp.data&&typeof cb == 'function'){
+				cb(resp.data);
+			}else if(typeof cb == 'function'){
+				cb(false);
+			}
+		});
 	}
 	this.updateAfterWhile = function(part, obj, callback){
 		$timeout.cancel(obj.updateTimeout);
@@ -296,8 +313,9 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 	this.delete = function(part, obj, callback){
 		if(!obj) return;
 		if(socket) obj.print = socket.id;
-		$http.post('/api/'+part+'/delete', obj)
-		.then(function(resp){
+		$http.post('/api/'+part+'/delete', {
+			_id: obj._id
+		}).then(function(resp){
 			if(resp.data&&typeof callback == 'function'){
 				callback(resp.data);
 			}else if(typeof callback == 'function'){
