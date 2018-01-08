@@ -2,10 +2,10 @@
 ## File Management
 ```
 fm.add({
-	_id: 'addImageID', // in html type: <label for="addImageID">, requirement
-	width: 1920, // if no option given, it get 1920
-	height: 1080, // if no option given, it get 1080
-	multiple: true // if no option given, it get false, allow multiple files download
+	_id: 'addImageID',
+	width: 1920,
+	height: 1080,
+	multiple: true
 }, function(dataUrl, file) {
 	// manage dataUrl or file, if multiple callback will be called as much times as files given.
 });
