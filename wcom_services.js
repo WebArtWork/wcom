@@ -156,7 +156,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		if(typeof rpl == 'function'){
 			rpl(doc[value], function(newValue){
 				doc[value] = newValue;
-			});
+			}, doc);
 		}
 	}
 	this.push = function(part, doc, rpl){
@@ -207,7 +207,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 				self.use(part, cb);
 			}, 250);
 		}
-		return cb(self.cl[part]);
+		return cb&&cb(self.cl[part]);
 	}
 	this.run = function(parts, cb){
 		if(Array.isArray(parts)){
@@ -231,18 +231,32 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		if(typeof fields == 'function') cb = fields;
 		if(!self.clpc[fromPart]){
 			return $timeout(function(){
-				self.populate(obj, fromPart, toField, fields, cb);
+				self.fill(obj, fromPart, toField, fields, cb);
 			}, 250);
 		}
 		for (var j = 0; j < self.cl[fromPart].length; j++) {
-			if(self.cl[fromPart][j]._id == obj[toField]){
-				if(fields&&typeof fields!='function'){
-					obj[toField]={};
-					for(var key in fields){
-						obj[toField][key]=self.cl[fromPart][j][key];
+			if(Array.isArray(obj[toField])){
+				for (var k = 0; k < obj[toField].length; k++) {
+					if (self.cl[fromPart][j]._id == obj[toField][k]) {
+						if (fields && typeof fields != 'function') {
+							obj[toField][k] = {};
+							for (var key in fields) {
+								obj[toField][k][key] = self.cl[fromPart][j][key];
+							}
+						} else obj[toField][k] = self.cl[fromPart][j];
+						break;
 					}
-				}else obj[toField]=self.cl[fromPart][j];
-				break;
+				}
+			}else{
+				if(self.cl[fromPart][j]._id == obj[toField]){
+					if(fields&&typeof fields!='function'){
+						obj[toField]={};
+						for(var key in fields){
+							obj[toField][key]=self.cl[fromPart][j][key];
+						}
+					}else obj[toField]=self.cl[fromPart][j];
+					break;
+				}
 			}
 		}
 		cb&&cb();
@@ -255,16 +269,33 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}, 250);
 		}
 		for (var i = 0; i < self.cl[toPart].length; i++) {
-			if(typeof self.cl[toPart][i][toField] != 'string') continue;
-			for (var j = 0; j < self.cl[fromPart].length; j++) {
-				if(self.cl[fromPart][j]._id == self.cl[toPart][i][toField]){
-					if(fields&&typeof fields!='function'){
-						self.cl[toPart][i][toField]={};
-						for(var key in fields){
-							self.cl[toPart][i][toField][key]=self.cl[fromPart][j][key];
+			if(Array.isArray(self.cl[toPart][i][toField])){
+				for (var k = 0; k < self.cl[toPart][i][toField].length; k++) {
+					if(typeof self.cl[toPart][i][toField][k] != 'string') continue;
+					for (var j = 0; j < self.cl[fromPart].length; j++) {
+						if(self.cl[fromPart][j]._id == self.cl[toPart][i][toField][k]){
+							if(fields&&typeof fields!='function'){
+								self.cl[toPart][i][toField][k]={};
+								for(var key in fields){
+									self.cl[toPart][i][toField][k][key]=self.cl[fromPart][j][key];
+								}
+							}else self.cl[toPart][i][toField][k]=self.cl[fromPart][j];
+							break;
 						}
-					}else self.cl[toPart][i][toField]=self.cl[fromPart][j];
-					break;
+					}
+				}
+			}else{
+				if(typeof self.cl[toPart][i][toField] != 'string') continue;
+				for (var j = 0; j < self.cl[fromPart].length; j++) {
+					if(self.cl[fromPart][j]._id == self.cl[toPart][i][toField]){
+						if(fields&&typeof fields!='function'){
+							self.cl[toPart][i][toField]={};
+							for(var key in fields){
+								self.cl[toPart][i][toField][key]=self.cl[fromPart][j][key];
+							}
+						}else self.cl[toPart][i][toField]=self.cl[fromPart][j];
+						break;
+					}
 				}
 			}
 		}
@@ -321,6 +352,12 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 				callback(false);
 			}
 		});
+	}
+	this.inDocs = function(doc, docs){
+		for (var i = 0; i < docs.length; i++) {
+			if(docs[i]._id == doc._id) return true;
+		}
+		return false;
 	}
 	// doc fill
 	this.beArray = function(val, cb){
