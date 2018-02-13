@@ -64,6 +64,12 @@ angular.module("wcom_directives", [])
 			}
 			resize();
 			angular.element($window).bind('resize', resize);
+			scope.$watch(function () {
+				return [el[0].clientWidth, el[0].clientHeight].join('x');
+			},function (value) {
+				if(value.split('x')[0]>0) scope.elsize.width = value.split('x')[0];
+				if(value.split('x')[1]>0) scope.elsize.height = value.split('x')[1];
+			});
 		}
 	}
 })
