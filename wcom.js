@@ -321,9 +321,8 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 	this.update = function(part, obj, cb){
 		if(!obj) return;
 		$timeout.cancel(obj.updateTimeout);
-		if(!obj.name) obj.name='';
 		if(socket) obj.print = socket.id;
-		$http.post('/api/'+part+'/update'+obj.name, obj)
+		$http.post('/api/'+part+'/update'+(obj._name||''), obj)
 		.then(function(resp){
 			if(resp.data&&typeof cb == 'function'){
 				cb(resp.data);
@@ -333,7 +332,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		});
 	}
 	this.updateAll = function(part, obj, cb){
-		$http.post('/api/'+part+'/update/all'+(obj.name||''), obj).then(function(resp){
+		$http.post('/api/'+part+'/update/all'+(obj._name||''), obj).then(function(resp){
 			if(resp.data&&typeof cb == 'function'){
 				cb(resp.data);
 			}else if(typeof cb == 'function'){
