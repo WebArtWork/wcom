@@ -153,6 +153,12 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 	this.cl = {}; // collection
 	this.clpc = {}; // complete collection pulled boolean
 	this.clp = {}; // collection pulled boolean
+	this._id = function(cb){
+		if(typeof cb != 'function') return;
+		$http.get('/waw/newId').then(function(resp){
+			cb(resp.data);
+		});
+	}
 	var replace = function(doc, value, rpl){
 		if(typeof rpl == 'function'){
 			rpl(doc[value], function(newValue){
