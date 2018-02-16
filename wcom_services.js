@@ -365,6 +365,13 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		}
 		return false;
 	}
+	this.c_text = function(text, clear){
+		text = text.split(clear||' ');
+		for (var i = text.length - 1; i >= 0; i--) {
+			if(text[i]=='') text.splice(i, 1);
+		}
+		return text.join('');
+	}
 	// doc fill
 	this.beArray = function(val, cb){
 		if(!Array.isArray(val)) cb([]);
