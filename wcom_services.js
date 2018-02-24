@@ -178,10 +178,12 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			for(var key in rpl){
 				replace(doc, key, rpl[key]);
 			}
-		}		
+		}
 		Array.isArray(self.cl[part])&&self.cl[part].unshift(doc);
 	}
-	this.get = function(part, rpl, opts){
+	this.get = function(part, rpl, opts, cb){
+		if(typeof rpl == 'function') cb = rpl;
+		if(typeof opts == 'function') cb = opts;
 		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
 		if(self.clp[part]) return self.cl[part];
 		self.clp[part] = true;
@@ -202,6 +204,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}
 			if(opts&&opts.sort) self.cl[part].sort(opts.sort);
 			self.clpc[part] = true;
+			typeof cb=='function'&&cb();
 		}, function(err){
 			console.log(err);
 		});
