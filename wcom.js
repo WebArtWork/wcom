@@ -380,6 +380,9 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		if(!Array.isArray(val)) cb([]);
 		else cb(val);
 	}
+	this.forceObj = function(val, cb){
+		cb({});
+	}
 }).service('img', function(){
 	"ngInject";
 	this.fileToDataUrl = function(file, callback){
