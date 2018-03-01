@@ -204,7 +204,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}
 			if(opts&&opts.sort) self.cl[part].sort(opts.sort);
 			self.clpc[part] = true;
-			typeof cb=='function'&&cb();
+			typeof cb=='function'&&cb(self.cl[part]);
 		}, function(err){
 			console.log(err);
 		});
