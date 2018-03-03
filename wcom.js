@@ -349,6 +349,10 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			self.update(part, obj, callback);
 		}, 1000);
 	}
+	this.afterWhile = function(obj, cb, time){
+		$timeout.cancel(obj.updateTimeout);
+		obj.updateTimeout = $timeout(cb, time||1000);
+	}
 	this.delete = function(part, obj, callback){
 		if(!obj) return;
 		if(socket) obj.print = socket.id;
