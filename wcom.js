@@ -365,6 +365,14 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		$http.post('/api/'+part+'/delete'+custom, {
 			_id: obj._id
 		}).then(function(resp){
+			if(resp.data&&Array.isArray(self.cl[part])){
+				for (var i = 0; i < self.cl[part].length; i++) {
+					if(self.cl[part][i]._id == obj._id){
+						self.cl[part].splice(i, 1);
+						break;
+					}
+				}
+			}
 			if(resp.data&&typeof cb == 'function'){
 				cb(resp.data);
 			}else if(typeof cb == 'function'){
