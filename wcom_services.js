@@ -310,17 +310,19 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		}
 		cb&&cb();
 	}
-	this.create = function(part, obj, callback){
+	this.create = function(part, obj, cb){
 		$http.post('/api/'+part+'/create', obj||{})
 		.then(function(resp){
-			if(resp.data&&typeof callback == 'function'){
-				callback(resp.data);
-			}else if(typeof callback == 'function'){
-				callback(false);
+			if(resp.data&&typeof cb == 'function'){
+				cb(resp.data);
+			}else if(typeof cb == 'function'){
+				cb(false);
 			}
 		});
 	}
-	this.update = function(part, obj, cb){
+	this.update = function(part, obj, custom, cb){
+		if(typeof custom == 'function') cb = custom;
+		if(typeof custom != 'string') custom = '';
 		if(!obj) return;
 		$timeout.cancel(obj.updateTimeout);
 		if(socket) obj.print = socket.id;
@@ -333,7 +335,9 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}
 		});
 	}
-	this.updateAll = function(part, obj, cb){
+	this.updateAll = function(part, obj, custom, cb){
+		if(typeof custom == 'function') cb = custom;
+		if(typeof custom != 'string') custom = '';
 		$http.post('/api/'+part+'/update/all'+(obj._name||''), obj).then(function(resp){
 			if(resp.data&&typeof cb == 'function'){
 				cb(resp.data);
@@ -342,26 +346,28 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}
 		});
 	}
-	this.updateAfterWhile = function(part, obj, callback){
+	this.updateAfterWhile = function(part, obj, cb){
 		$timeout.cancel(obj.updateTimeout);
 		obj.updateTimeout = $timeout(function(){
-			self.update(part, obj, callback);
+			self.update(part, obj, cb);
 		}, 1000);
 	}
 	this.afterWhile = function(obj, cb, time){
 		$timeout.cancel(obj.updateTimeout);
 		obj.updateTimeout = $timeout(cb, time||1000);
 	}
-	this.delete = function(part, obj, callback){
+	this.delete = function(part, obj, custom, cb){
+		if(typeof custom == 'function') cb = custom;
+		if(typeof custom != 'string') custom = '';
 		if(!obj) return;
 		if(socket) obj.print = socket.id;
-		$http.post('/api/'+part+'/delete', {
+		$http.post('/api/'+part+'/delete'+custom, {
 			_id: obj._id
 		}).then(function(resp){
-			if(resp.data&&typeof callback == 'function'){
-				callback(resp.data);
-			}else if(typeof callback == 'function'){
-				callback(false);
+			if(resp.data&&typeof cb == 'function'){
+				cb(resp.data);
+			}else if(typeof cb == 'function'){
+				cb(false);
 			}
 		});
 	}
