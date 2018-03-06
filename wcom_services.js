@@ -335,6 +335,12 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}
 		});
 	}
+	this.updateAfterWhile = function(part, obj, cb){
+		$timeout.cancel(obj.updateTimeout);
+		obj.updateTimeout = $timeout(function(){
+			self.update(part, obj, cb);
+		}, 1000);
+	}
 	this.updateAll = function(part, obj, custom, cb){
 		if(typeof custom == 'function') cb = custom;
 		if(typeof custom != 'string') custom = '';
@@ -346,10 +352,10 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 			}
 		});
 	}
-	this.updateAfterWhile = function(part, obj, cb){
+	this.updateAfterWhileAll = function(part, obj, cb){
 		$timeout.cancel(obj.updateTimeout);
 		obj.updateTimeout = $timeout(function(){
-			self.update(part, obj, cb);
+			self.updateAll(part, obj, cb);
 		}, 1000);
 	}
 	this.afterWhile = function(obj, cb, time){
