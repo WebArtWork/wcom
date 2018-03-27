@@ -1,4 +1,7 @@
-angular.module("wcom", ["wcom_services", "wcom_mongo", "wcom_filters", "wcom_directives"]);
+angular.module("wcom", ["wcom_wtags.html", "wcom_services", "wcom_mongo", "wcom_filters", "wcom_directives"]);
+angular.module("wcom_wtags.html", []).run(["$templateCache", function($templateCache) {
+	$templateCache.put("wcom_wtags.html", "<label class='wtags'><span class='wtag' ng-repeat='tag in tags'>#{{tag}} <i class='icon icon-close' ng-click='tags.splice($index, 1); update_tags();'></i></span><input type='text' placeholder='new tag' ng-model='new_tag' ng-keyup='enter($event)'></label>");
+}]);
 angular.module("wcom_services", []).run(function($rootScope, $compile){
 	let body = angular.element(document).find('body').eq(0);
 	body.append($compile(angular.element('<pullfiles></pullfiles>'))($rootScope));
@@ -699,4 +702,29 @@ angular.module("wcom_directives", [])
 			});
 		}
 	}
-})
+}).directive('wtags', function($filter){
+	"ngInject";
+	return {
+		restrict: 'AE',
+		scope: {
+			object: '=',
+			model: '@',
+			change: '&'
+		}, controller: function($scope){
+			$scope.tags = $filter('toArr')($scope.object[$scope.model]);
+			$scope.update_tags = function(){
+				$scope.object[$scope.model] = $scope.tags.join(', ');
+				if(typeof $scope.change == 'function') $scope.change();
+			}
+			$scope.enter = function(e){
+				if(e.keyCode==13){
+					if($scope.new_tag){
+						$scope.tags.push($scope.new_tag);
+						$scope.update_tags();
+					}
+					$scope.new_tag = null;
+				}
+			}
+		}, templateUrl: 'wcom_wtags.html'
+	}
+});
