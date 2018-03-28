@@ -196,7 +196,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 	this.cl = {}; // collection
 	this.clpc = {}; // complete collection pulled boolean
 	this.clp = {}; // collection pulled boolean
-	this._id = function(cb){
+	this._id = (cb) => {
 		if(typeof cb != 'function') return;
 		$http.get('/waw/newId').then(function(resp){
 			cb(resp.data);
@@ -379,7 +379,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		});
 	};
-	this.updateAfterWhile = function(part, obj, cb){
+	this.updateAfterWhile = (part, obj, cb) => {
 		$timeout.cancel(obj.updateTimeout);
 		obj.updateTimeout = $timeout(function(){
 			self.update(part, obj, cb);
@@ -402,7 +402,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			self.updateAll(part, obj, cb);
 		}, 1000);
 	};
-	this.afterWhile = function(obj, cb, time){
+	this.afterWhile = (obj, cb, time) => {
 		$timeout.cancel(obj.updateTimeout);
 		obj.updateTimeout = $timeout(cb, time||1000);
 	};
