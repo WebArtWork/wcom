@@ -97,4 +97,22 @@ angular.module("wcom_directives", [])
 			}
 		}, templateUrl: 'wcom_wtags.html'
 	}
+}).directive('wmodaerators', function($filter){
+	"ngInject";
+	return {
+		restrict: 'AE',
+		scope: {
+			object: '=',
+			users: '=',
+			change: '&'
+		}, templateUrl: 'wcom_wmodaerators.html'
+	}
+}).directive('wmodaeratorsview', function($filter){
+	"ngInject";
+	return {
+		restrict: 'AE',
+		scope: {
+			object: '='
+		}, templateUrl: 'wcom_wmodaeratorsview.html'
+	}
 });

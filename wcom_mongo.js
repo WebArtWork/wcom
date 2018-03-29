@@ -34,22 +34,22 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		}
 		Array.isArray(this.cl[part])&&this.cl[part].unshift(doc);
 	};
-	this.get = function(part, rpl, opts, cb){
+	this.get = (part, rpl, opts, cb) => {
 		if(typeof rpl == 'function') cb = rpl;
 		if(typeof opts == 'function') cb = opts;
-		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
-		if(self.clp[part]) return self.cl[part];
+		if(!Array.isArray(this.cl[part])) this.cl[part] = [];
+		if(this.clp[part]) return this.cl[part];
 		replaces[part] = rpl;
 		options[part] = opts;
-		self.clp[part] = true;
+		this.clp[part] = true;
 		let pull;
 		if(opts&&opts.query){
 			pull = $http.get('/api/'+part+'/'+opts.query);
 		}else pull = $http.get('/api/'+part+'/get');
-		pull.then(function(resp){
+		pull.then((resp) => {
 			if(Array.isArray(resp.data)){
 				for (var i = 0; i < resp.data.length; i++) {
-					self.cl[part].push(resp.data[i]);
+					this.cl[part].push(resp.data[i]);
 					if(rpl){
 						for(var key in rpl){
 							replace(resp.data[i], key, rpl[key]);
@@ -57,13 +57,24 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 					}
 				}
 			}
-			if(opts&&opts.sort) self.cl[part].sort(opts.sort);
-			self.clpc[part] = true;
-			typeof cb=='function'&&cb(self.cl[part]);
+			if(opts){
+				if(opts.sort) this.cl[part].sort(opts.sort);
+				if(opts.populate){
+					if(Array.isArray(opts.populate)){
+						for (var i = 0; i < opts.populate.length; i++) {
+							this.populate(part, opts.populate[i].model, opts.populate[i].path);
+						}
+					}else if(typeof opts.populate == 'object'){
+						this.populate(part, opts.populate.model, opts.populate.path);
+					}
+				};
+			}
+			this.clpc[part] = true;
+			typeof cb=='function'&&cb(this.cl[part]);
 		}, function(err){
 			console.log(err);
 		});
-		return self.cl[part];
+		return this.cl[part];
 	};
 	this.use = function(part, cb){
 		if(!self.clpc[part]){
@@ -175,7 +186,18 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		.then((resp)=>{
 			if(resp.data){
 				this.push(part, resp.data, replaces[part]);
-				if(options[part]&&options[part].sort) this.cl[part].sort(options[part].sort);
+				let o = options[part];
+				if(o&&o.sort)
+					this.cl[part].sort(o.sort);
+				if(o&&o.populate){
+					if (Array.isArray(o.populate)) {
+						for (var i = 0; i < o.populate.length; i++) {
+							this.fill(resp.data, o.populate[i].model, o.populate[i].path);
+						}
+					} else if (typeof o.populate == 'object') {
+						this.fill(resp.data, o.populate.model, o.populate.path);
+					}
+				}
 				if(typeof cb == 'function') cb(resp.data);
 			}else if(typeof cb == 'function'){
 				cb(false);

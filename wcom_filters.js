@@ -14,6 +14,20 @@ angular.module("wcom_filters", [])
 		}
 		return arr;
 	}
+}).filter('rArr', function(){
+	"ngInject";
+	return function(origin_arr, remove_arr){
+		let arr = origin_arr.slice();
+		for (var i = arr.length - 1; i >= 0; i--) {
+			for (var j = 0; j < remove_arr.length; j++) {
+				if(remove_arr[j]._id == arr[i]._id){
+					arr.splice(i, 1);
+					break;
+				}
+			}
+		}
+		return arr;
+	}
 }).filter('mongodate', function(){
 	"ngInject";
 	return function(_id){

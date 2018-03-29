@@ -1,6 +1,12 @@
-angular.module("wcom", ["wcom_wtags.html", "wcom_services", "wcom_mongo", "wcom_filters", "wcom_directives"]);
+angular.module("wcom", ["wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_services", "wcom_mongo", "wcom_filters", "wcom_directives"]);
 angular.module("wcom_wtags.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wcom_wtags.html", "<label class='wtags'><span class='wtag' ng-repeat='tag in tags'>#{{tag}} <i class='icon icon-close' ng-click='tags.splice($index, 1); update_tags();'></i></span><input type='text' placeholder='new tag' ng-model='new_tag' ng-keyup='enter($event)'></label>");
+}]);
+angular.module("wcom_wmodaeratorsview.html", []).run(["$templateCache", function($templateCache) {
+	$templateCache.put("wcom_wmodaeratorsview.html", "<span class='wtag' ng-repeat='moderator in object.moderators'><img ng-src='{{moderator.avatarUrl}}' alt='{{moderator.name}}'><span>{{moderator.name}}</span></span>");
+}]);
+angular.module("wcom_wmodaerators.html", []).run(["$templateCache", function($templateCache) {
+	$templateCache.put("wcom_wmodaerators.html", "<label class='wtags'><span class='wtag' ng-repeat='moderator in object.moderators'><img ng-src='{{moderator.avatarUrl}}' alt='{{moderator.name}}'><span>{{moderator.name}}</span> <i class='icon icon-close' ng-click='object.moderators.splice($index, 1); change();'></i></span><input type='text' placeholder='new moderator' ng-model='object.new_moderator'></label><div ng-if='object.new_moderator'><div ng-repeat='user in users|rArr:object.moderators|filter:object.new_moderator' ng-click='object.moderators.push(user); object.new_moderator=null; change();'><img ng-src='{{user.avatarUrl}}' alt='{{user.name}}'><span>{{user.name}}</span></div></div>");
 }]);
 angular.module("wcom_services", []).run(function($rootScope, $compile){
 	let body = angular.element(document).find('body').eq(0);
@@ -227,22 +233,22 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		}
 		Array.isArray(this.cl[part])&&this.cl[part].unshift(doc);
 	};
-	this.get = function(part, rpl, opts, cb){
+	this.get = (part, rpl, opts, cb) => {
 		if(typeof rpl == 'function') cb = rpl;
 		if(typeof opts == 'function') cb = opts;
-		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
-		if(self.clp[part]) return self.cl[part];
+		if(!Array.isArray(this.cl[part])) this.cl[part] = [];
+		if(this.clp[part]) return this.cl[part];
 		replaces[part] = rpl;
 		options[part] = opts;
-		self.clp[part] = true;
+		this.clp[part] = true;
 		let pull;
 		if(opts&&opts.query){
 			pull = $http.get('/api/'+part+'/'+opts.query);
 		}else pull = $http.get('/api/'+part+'/get');
-		pull.then(function(resp){
+		pull.then((resp) => {
 			if(Array.isArray(resp.data)){
 				for (var i = 0; i < resp.data.length; i++) {
-					self.cl[part].push(resp.data[i]);
+					this.cl[part].push(resp.data[i]);
 					if(rpl){
 						for(var key in rpl){
 							replace(resp.data[i], key, rpl[key]);
@@ -250,13 +256,24 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 					}
 				}
 			}
-			if(opts&&opts.sort) self.cl[part].sort(opts.sort);
-			self.clpc[part] = true;
-			typeof cb=='function'&&cb(self.cl[part]);
+			if(opts){
+				if(opts.sort) this.cl[part].sort(opts.sort);
+				if(opts.populate){
+					if(Array.isArray(opts.populate)){
+						for (var i = 0; i < opts.populate.length; i++) {
+							this.populate(part, opts.populate[i].model, opts.populate[i].path);
+						}
+					}else if(typeof opts.populate == 'object'){
+						this.populate(part, opts.populate.model, opts.populate.path);
+					}
+				};
+			}
+			this.clpc[part] = true;
+			typeof cb=='function'&&cb(this.cl[part]);
 		}, function(err){
 			console.log(err);
 		});
-		return self.cl[part];
+		return this.cl[part];
 	};
 	this.use = function(part, cb){
 		if(!self.clpc[part]){
@@ -368,7 +385,18 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		.then((resp)=>{
 			if(resp.data){
 				this.push(part, resp.data, replaces[part]);
-				if(options[part]&&options[part].sort) this.cl[part].sort(options[part].sort);
+				let o = options[part];
+				if(o&&o.sort)
+					this.cl[part].sort(o.sort);
+				if(o&&o.populate){
+					if (Array.isArray(o.populate)) {
+						for (var i = 0; i < o.populate.length; i++) {
+							this.fill(resp.data, o.populate[i].model, o.populate[i].path);
+						}
+					} else if (typeof o.populate == 'object') {
+						this.fill(resp.data, o.populate.model, o.populate.path);
+					}
+				}
 				if(typeof cb == 'function') cb(resp.data);
 			}else if(typeof cb == 'function'){
 				cb(false);
@@ -594,6 +622,20 @@ angular.module("wcom_filters", [])
 		}
 		return arr;
 	}
+}).filter('rArr', function(){
+	"ngInject";
+	return function(origin_arr, remove_arr){
+		let arr = origin_arr.slice();
+		for (var i = arr.length - 1; i >= 0; i--) {
+			for (var j = 0; j < remove_arr.length; j++) {
+				if(remove_arr[j]._id == arr[i]._id){
+					arr.splice(i, 1);
+					break;
+				}
+			}
+		}
+		return arr;
+	}
 }).filter('mongodate', function(){
 	"ngInject";
 	return function(_id){
@@ -749,5 +791,23 @@ angular.module("wcom_directives", [])
 				}
 			}
 		}, templateUrl: 'wcom_wtags.html'
+	}
+}).directive('wmodaerators', function($filter){
+	"ngInject";
+	return {
+		restrict: 'AE',
+		scope: {
+			object: '=',
+			users: '=',
+			change: '&'
+		}, templateUrl: 'wcom_wmodaerators.html'
+	}
+}).directive('wmodaeratorsview', function($filter){
+	"ngInject";
+	return {
+		restrict: 'AE',
+		scope: {
+			object: '='
+		}, templateUrl: 'wcom_wmodaeratorsview.html'
 	}
 });
