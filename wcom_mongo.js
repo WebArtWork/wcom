@@ -1,9 +1,9 @@
 angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, socket){
-	let self = this, replaces={}, options={};
+	let self = this, replaces={}, options={}, docs={};
 	this.cl = {}; // collection
 	this.clpc = {}; // complete collection pulled boolean
 	this.clp = {}; // collection pulled boolean
-	this._id = (cb) => {
+	this._id = (cb)=>{
 		if(typeof cb != 'function') return;
 		$http.get('/waw/newId').then(function(resp){
 			cb(resp.data);
@@ -34,7 +34,15 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		}
 		Array.isArray(this.cl[part])&&this.cl[part].unshift(doc);
 	};
-	this.get = (part, rpl, opts, cb) => {
+	this.use = function(part, cb){
+		if(!self.clpc[part]){
+			return $timeout(function(){
+				self.use(part, cb);
+			}, 250);
+		}
+		return cb&&cb(self.cl[part]);
+	};
+	this.get = (part, rpl, opts, cb)=>{
 		if(typeof rpl == 'function') cb = rpl;
 		if(typeof opts == 'function') cb = opts;
 		if(!Array.isArray(this.cl[part])) this.cl[part] = [];
@@ -46,9 +54,10 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		if(opts&&opts.query){
 			pull = $http.get('/api/'+part+'/'+opts.query);
 		}else pull = $http.get('/api/'+part+'/get');
-		pull.then((resp) => {
+		pull.then((resp)=>{
 			if(Array.isArray(resp.data)){
 				for (var i = 0; i < resp.data.length; i++) {
+					docs[part+'_'+resp.data[i]._id] = resp.data[i];
 					this.cl[part].push(resp.data[i]);
 					if(rpl){
 						for(var key in rpl){
@@ -76,66 +85,25 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		});
 		return this.cl[part];
 	};
-	this.use = function(part, cb){
-		if(!self.clpc[part]){
-			return $timeout(function(){
-				self.use(part, cb);
-			}, 250);
-		}
-		return cb&&cb(self.cl[part]);
-	};
-	this.run = function(parts, cb){
+	this.run = (parts, cb)=>{
 		if(Array.isArray(parts)){
 			for (var i = 0; i < parts.length; i++) {
-				if (!self.clpc[parts[i]]) {
+				if (!this.clpc[parts[i]]) {
 					return $timeout(function() {
-						self.run(parts, cb);
+						this.run(parts, cb);
 					}, 250);
 				}
 			}
 		}else if(typeof parts == 'string'){
-			if (!self.clpc[parts]) {
+			if (!this.clpc[parts]) {
 				return $timeout(function() {
-					self.run(parts, cb);
+					this.run(parts, cb);
 				}, 250);
 			}
 		}
 		cb();
 	};
-	this.fill = function(obj, fromPart, toField, fields, cb){
-		if(typeof fields == 'function') cb = fields;
-		if(!self.clpc[fromPart]){
-			return $timeout(function(){
-				self.fill(obj, fromPart, toField, fields, cb);
-			}, 250);
-		}
-		for (var j = 0; j < self.cl[fromPart].length; j++) {
-			if(Array.isArray(obj[toField])){
-				for (var k = 0; k < obj[toField].length; k++) {
-					if (self.cl[fromPart][j]._id == obj[toField][k]) {
-						if (fields && typeof fields != 'function') {
-							obj[toField][k] = {};
-							for (var key in fields) {
-								obj[toField][k][key] = self.cl[fromPart][j][key];
-							}
-						} else obj[toField][k] = self.cl[fromPart][j];
-						break;
-					}
-				}
-			}else{
-				if(self.cl[fromPart][j]._id == obj[toField]){
-					if(fields&&typeof fields!='function'){
-						obj[toField]={};
-						for(var key in fields){
-							obj[toField][key]=self.cl[fromPart][j][key];
-						}
-					}else obj[toField]=self.cl[fromPart][j];
-					break;
-				}
-			}
-		}
-		cb&&cb();
-	};
+
 	this.populate = function(toPart, fromPart, toField, fields, cb){
 		if(typeof fields == 'function') cb = fields;
 		if(!self.clpc[toPart]||!self.clpc[fromPart]){
@@ -144,40 +112,53 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}, 250);
 		}
 		for (var i = 0; i < self.cl[toPart].length; i++) {
-			if(Array.isArray(self.cl[toPart][i][toField])){
-				for (var k = 0; k < self.cl[toPart][i][toField].length; k++) {
-					if(typeof self.cl[toPart][i][toField][k] != 'string') continue;
-					for (var j = 0; j < self.cl[fromPart].length; j++) {
-						if(self.cl[fromPart][j]._id == self.cl[toPart][i][toField][k]){
-							if(fields&&typeof fields!='function'){
-								self.cl[toPart][i][toField][k]={};
-								for(var key in fields){
-									self.cl[toPart][i][toField][k][key]=self.cl[fromPart][j][key];
-								}
-							}else self.cl[toPart][i][toField][k]=self.cl[fromPart][j];
-							break;
-						}
-					}
+			this.fill(self.cl[toPart][i], fromPart, toField, fields, cb);
+		}
+		cb&&cb();
+	};
+	let fill = (obj, to, doc, fields)=>{
+		if (fields && typeof fields != 'function') {
+			obj[to] = {};
+			for (var key in fields) {
+				obj[to][key] = doc[key];
+			}
+		} else obj[to] = doc;
+	}
+	this.fill = (obj, fromPart, toField, fields, cb)=>{
+		if(typeof fields == 'function') cb = fields;
+		if(!self.clpc[fromPart]){
+			return $timeout(function(){
+				self.fill(obj, fromPart, toField, fields, cb);
+			}, 250);
+		}
+		while(toField.indexOf('.')>-1){
+			toField = toField.split('.');
+			obj = obj[toField.shift()];
+			toField = toField.join('.');
+			if(Array.isArray(obj)){
+				for (var i = 0; i < obj.length; i++) {
+					this.fill(obj[i], fromPart, toField, fields, cb);
 				}
-			}else{
-				if(typeof self.cl[toPart][i][toField] != 'string') continue;
-				for (var j = 0; j < self.cl[fromPart].length; j++) {
-					if(self.cl[fromPart][j]._id == self.cl[toPart][i][toField]){
-						if(fields&&typeof fields!='function'){
-							self.cl[toPart][i][toField]={};
-							for(var key in fields){
-								self.cl[toPart][i][toField][key]=self.cl[fromPart][j][key];
-							}
-						}else self.cl[toPart][i][toField]=self.cl[fromPart][j];
-						break;
-					}
+				return;
+			}
+		}
+		if(Array.isArray(obj[toField])){
+			for (var k = obj[toField].length - 1; k >= 0; k--) {
+				if(docs[fromPart+'_'+obj[toField][k]]){
+					fill(obj[toField], k, docs[fromPart+'_'+obj[toField][k]], fields);
+				}else{
+					obj[toField].splice(k, 1);
 				}
 			}
+		}else if(docs[fromPart+'_'+obj[toField]]){
+			fill(obj, toField, docs[fromPart+'_'+obj[toField]], fields);
+		}else{
+			delete obj[toField];
 		}
 		cb&&cb();
 	};
 
-	this.create = (part, obj, cb) => {
+	this.create = (part, obj, cb)=>{
 		if(typeof obj == 'function'){
 			cb = obj;
 			obj = {};
@@ -204,11 +185,11 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		});
 	};
-	this.afterWhile = (obj, cb, time) => {
+	this.afterWhile = (obj, cb, time)=>{
 		$timeout.cancel(obj.updateTimeout);
 		obj.updateTimeout = $timeout(cb, time||1000);
 	};
-	this.update = (part, obj, custom, cb) => {
+	this.update = (part, obj, custom, cb)=>{
 		if(typeof custom == 'function') cb = custom;
 		if(typeof custom != 'string') custom = '';
 		if(!obj) return;
@@ -223,7 +204,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		});
 	};
-	this.updateAll = (part, obj, custom, cb) => {
+	this.updateAll = (part, obj, custom, cb)=>{
 		if(typeof custom == 'function') cb = custom;
 		if(typeof custom != 'string') custom = '';
 		$http.post('/api/'+part+'/update/all'+custom, obj).then(function(resp){
@@ -234,7 +215,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		});
 	};
-	this.updateUnique = (part, obj, custom='', cb) => {
+	this.updateUnique = (part, obj, custom='', cb)=>{
 		if(typeof custom == 'function'){
 			cb = custom;
 			custom='';
@@ -246,7 +227,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		});
 	};
 
-	this.updateAfterWhile = (part, obj, cb) => {
+	this.updateAfterWhile = (part, obj, cb)=>{
 		$timeout.cancel(obj.updateTimeout);
 		obj.updateTimeout = $timeout(function(){
 			self.update(part, obj, cb);
@@ -297,11 +278,18 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		return text.join('');
 	};
 	// doc fill
-	this.beArray = (val, cb) => {
+	this.beArray = (val, cb)=>{
 		if(!Array.isArray(val)) cb([]);
 		else cb(val);
 	};
-	this.forceObj = (val, cb) => cb({});
+	this.forceObj = (val, cb)=>cb({});
+	this.arr_to_id =arr=>{
+		let new_arr = [];
+		for (var i = 0; i < arr.length; i++) {
+			if(arr[i]._id) new_arr.push(arr[i]._id);
+		}
+		return new_arr;
+	}
 	// search in docs
 	this.keepByBiggerNumber = function(docs, field, number){
 		for (var i = docs.length - 1; i >= 0; i--) {
