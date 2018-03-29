@@ -1,5 +1,5 @@
 angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, socket){
-	var self = this;
+	let self = this, replaces={}, options={};
 	this.cl = {}; // collection
 	this.clpc = {}; // complete collection pulled boolean
 	this.clp = {}; // collection pulled boolean
@@ -16,27 +16,31 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}, doc);
 		}
 	};
-	this.push = function(part, doc, rpl){
+	this.push = (part, doc, rpl)=>{
 		if(rpl){
 			for(var key in rpl){
 				replace(doc, key, rpl[key]);
 			}
 		}
-		Array.isArray(self.cl[part])&&self.cl[part].push(doc);
+		if(Array.isArray(self.cl[part])){
+			this.cl[part].push(doc);
+		}
 	};
-	this.unshift = function(part, doc, rpl){
+	this.unshift = (part, doc, rpl)=>{
 		if(rpl){
 			for(var key in rpl){
 				replace(doc, key, rpl[key]);
 			}
 		}
-		Array.isArray(self.cl[part])&&self.cl[part].unshift(doc);
+		Array.isArray(this.cl[part])&&this.cl[part].unshift(doc);
 	};
 	this.get = function(part, rpl, opts, cb){
 		if(typeof rpl == 'function') cb = rpl;
 		if(typeof opts == 'function') cb = opts;
 		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
 		if(self.clp[part]) return self.cl[part];
+		replaces[part] = rpl;
+		options[part] = opts;
 		self.clp[part] = true;
 		let pull;
 		if(opts&&opts.query){
@@ -161,17 +165,28 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		}
 		cb&&cb();
 	};
-	this.create = function(part, obj, cb){
+
+	this.create = (part, obj, cb) => {
+		if(typeof obj == 'function'){
+			cb = obj;
+			obj = {};
+		}
 		$http.post('/api/'+part+'/create', obj||{})
-		.then(function(resp){
-			if(resp.data&&typeof cb == 'function'){
-				cb(resp.data);
+		.then((resp)=>{
+			if(resp.data){
+				this.push(part, resp.data, replaces[part]);
+				if(options[part]&&options[part].sort) this.cl[part].sort(options[part].sort);
+				if(typeof cb == 'function') cb(resp.data);
 			}else if(typeof cb == 'function'){
 				cb(false);
 			}
 		});
 	};
-	this.update = function(part, obj, custom, cb){
+	this.afterWhile = (obj, cb, time) => {
+		$timeout.cancel(obj.updateTimeout);
+		obj.updateTimeout = $timeout(cb, time||1000);
+	};
+	this.update = (part, obj, custom, cb) => {
 		if(typeof custom == 'function') cb = custom;
 		if(typeof custom != 'string') custom = '';
 		if(!obj) return;
@@ -186,13 +201,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		});
 	};
-	this.updateAfterWhile = (part, obj, cb) => {
-		$timeout.cancel(obj.updateTimeout);
-		obj.updateTimeout = $timeout(function(){
-			self.update(part, obj, cb);
-		}, 1000);
-	};
-	this.updateAll = function(part, obj, custom, cb){
+	this.updateAll = (part, obj, custom, cb) => {
 		if(typeof custom == 'function') cb = custom;
 		if(typeof custom != 'string') custom = '';
 		$http.post('/api/'+part+'/update/all'+custom, obj).then(function(resp){
@@ -203,16 +212,31 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		});
 	};
+	this.updateUnique = (part, obj, custom='', cb) => {
+		if(typeof custom == 'function'){
+			cb = custom;
+			custom='';
+		}
+		$http.post('/api/'+part+'/unique/field'+custom, obj).then(function(resp){
+			if(typeof cb == 'function'){
+				cb(resp.data);
+			}
+		});
+	};
+
+	this.updateAfterWhile = (part, obj, cb) => {
+		$timeout.cancel(obj.updateTimeout);
+		obj.updateTimeout = $timeout(function(){
+			self.update(part, obj, cb);
+		}, 1000);
+	};
 	this.updateAfterWhileAll = function(part, obj, cb){
 		$timeout.cancel(obj.updateTimeout);
 		obj.updateTimeout = $timeout(function(){
 			self.updateAll(part, obj, cb);
 		}, 1000);
 	};
-	this.afterWhile = (obj, cb, time) => {
-		$timeout.cancel(obj.updateTimeout);
-		obj.updateTimeout = $timeout(cb, time||1000);
-	};
+
 	this.delete = function(part, obj, custom, cb){
 		if(typeof custom == 'function') cb = custom;
 		if(typeof custom != 'string') custom = '';
@@ -236,6 +260,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		});
 	};
+
 	this.inDocs = function(doc, docs){
 		for (var i = 0; i < docs.length; i++) {
 			if(docs[i]._id == doc._id) return true;
@@ -250,13 +275,11 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		return text.join('');
 	};
 	// doc fill
-	this.beArray = function(val, cb){
+	this.beArray = (val, cb) => {
 		if(!Array.isArray(val)) cb([]);
 		else cb(val);
 	};
-	this.forceObj = function(val, cb){
-		cb({});
-	};
+	this.forceObj = (val, cb) => cb({});
 	// search in docs
 	this.keepByBiggerNumber = function(docs, field, number){
 		for (var i = docs.length - 1; i >= 0; i--) {
