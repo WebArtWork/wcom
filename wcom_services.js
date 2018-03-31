@@ -186,4 +186,24 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		};
 		reader.readAsDataURL(info.file);
 	}
+}).service('hash', function(){
+	"ngInject";
+	this.set = (obj)=>{
+		window.location.hash = '';
+		for(let key in obj){
+			if(obj[key]) window.location.hash+='&'+key+'='+obj[key];
+
+		}
+	}
+	this.get = ()=>{
+		let hash = window.location.hash.replace('#!#', '');
+		hash = hash.replace('#', '').split('&');
+		hash.shift();
+		let h = {};
+		for (var i = 0; i < hash.length; i++) {
+			hash[i] = hash[i].split('=');
+			h[hash[i][0]] = hash[i][1];
+		}
+		return h;
+	}
 });

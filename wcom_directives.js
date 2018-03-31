@@ -102,8 +102,9 @@ angular.module("wcom_directives", [])
 	return {
 		restrict: 'AE',
 		scope: {
-			object: '=',
+			arr: '=',
 			users: '=',
+			holder: '@',
 			change: '&'
 		}, templateUrl: 'wcom_wmodaerators.html'
 	}
@@ -112,7 +113,7 @@ angular.module("wcom_directives", [])
 	return {
 		restrict: 'AE',
 		scope: {
-			object: '='
+			arr: '='
 		}, templateUrl: 'wcom_wmodaeratorsview.html'
 	}
 });
