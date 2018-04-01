@@ -247,18 +247,17 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		}, 1000);
 	};
 
-	this.delete = function(part, obj, custom, cb){
-		if(typeof custom == 'function') cb = custom;
-		if(typeof custom != 'string') custom = '';
+	this.delete = (part, obj, custom='', cb)=>{
 		if(!obj) return;
-		if(socket) obj.print = socket.id;
-		$http.post('/api/'+part+'/delete'+custom, {
-			_id: obj._id
-		}).then(function(resp){
-			if(resp.data&&Array.isArray(self.cl[part])){
-				for (var i = 0; i < self.cl[part].length; i++) {
-					if(self.cl[part][i]._id == obj._id){
-						self.cl[part].splice(i, 1);
+		if(typeof custom == 'function'){
+			cb = custom;
+			custom = '';
+		}
+		$http.post('/api/'+part+'/delete'+custom, obj).then((resp)=>{
+			if(resp.data&&Array.isArray(this.cl[part])){
+				for (var i = 0; i < this.cl[part].length; i++) {
+					if(this.cl[part][i]._id == obj._id){
+						this.cl[part].splice(i, 1);
 						break;
 					}
 				}
@@ -298,6 +297,9 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		}
 		return get_arr;
+	}
+	this.rpla = (str, div=' ')=>{
+		return str.split(div).join('');
 	}
 	this.arr_to_id =arr=>{
 		let new_arr = [];
