@@ -441,7 +441,8 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 		});
 	};
-	self.updateUnique = function(part, obj, custom='', cb){
+	self.updateUnique = function(part, obj, custom, cb){
+		if(!custom) custom='';
 		if(typeof custom == 'function'){
 			cb = custom;
 			custom='';
@@ -466,7 +467,8 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		}, 1000);
 	};
 
-	self.delete = function(part, obj, custom='', cb){
+	self.delete = function(part, obj, custom, cb){
+		if(!custom) custom='';
 		if(!obj) return;
 		if(typeof custom == 'function'){
 			cb = custom;
@@ -519,7 +521,8 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		}
 		return get_arr;
 	}
-	self.rpla = function(str, div=' '){
+	self.rpla = function(str, div){
+		if(!div) div=' ';
 		return str.split(div).join('');
 	}
 	self.arr_to_id =function(arr){
