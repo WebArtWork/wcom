@@ -1,5 +1,5 @@
 angular.module("wcom_services", []).run(function($rootScope, $compile){
-	let body = angular.element(document).find('body').eq(0);
+	var body = angular.element(document).find('body').eq(0);
 	body.append($compile(angular.element('<pullfiles></pullfiles>'))($rootScope));
 }).factory('socket', function(){
 	"ngInject";
@@ -188,18 +188,18 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 	}
 }).service('hash', function(){
 	"ngInject";
-	this.set = (obj)=>{
+	this.set = function(obj){
 		window.location.hash = '';
-		for(let key in obj){
+		for(var key in obj){
 			if(obj[key]) window.location.hash+='&'+key+'='+obj[key];
 
 		}
 	}
-	this.get = ()=>{
-		let hash = window.location.hash.replace('#!#', '');
+	this.get = function(){
+		var hash = window.location.hash.replace('#!#', '');
 		hash = hash.replace('#', '').split('&');
 		hash.shift();
-		let h = {};
+		var h = {};
 		for (var i = 0; i < hash.length; i++) {
 			hash[i] = hash[i].split('=');
 			h[hash[i][0]] = hash[i][1];
