@@ -146,3 +146,6 @@ mongo.get('colName', {
 ## Socket Service
 ## Image Service
 ## Hash Service
+## License
+
+ [MIT](LICENSE)

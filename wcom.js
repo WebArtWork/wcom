@@ -372,9 +372,11 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 				doc.updateTimeout = $timeout(cb, time || 1000);
 			}
 		};
-		var populate = this.populate = function(doc, field, part){
+		var populate = this.populate = function(doc, field, part){	
 			if(!doc||!field||!part) return;
-			if(data['loaded'+part]= true){
+			if(data['loaded'+part]){
+				console.log(data['arr' + part]);
+				console.log(data['obj' + part]);
 				if(Array.isArray(field)){
 					for(var i = 0; i < field.length; i++){
 						populate(doc, field[i], part);
@@ -396,7 +398,6 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 					}
 					return;
 				}else if(typeof doc[field] == 'string'){
-					
 					doc[field] = data['obj'+part][doc[field]] || null;
 				}else return;
 			    }else {
@@ -404,6 +405,8 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 					  populate(doc, field, part);
 				      }, 250);
                 }
+                console.log(data['obj' + part]);
+                console.log(data['arr' + part]);
         }
 	/*
 	*	mongo replace support functions
