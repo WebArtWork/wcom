@@ -156,7 +156,6 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 		var populate = this.populate = function(doc, field, part){	
 			if(!doc||!field||!part) return;
 			if(data['loaded'+part]){
-				console.log(data['arr' + part]);
 				console.log(data['obj' + part]);
 				if(Array.isArray(field)){
 					for(var i = 0; i < field.length; i++){
@@ -187,7 +186,6 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 				      }, 250);
                 }
                 console.log(data['obj' + part]);
-                console.log(data['arr' + part]);
         }
 	/*
 	*	mongo replace support functions
