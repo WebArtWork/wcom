@@ -1,30 +1,31 @@
-angular.module("wmodal_modal", [])
+angular.module("wcom_modal", [])
 .service('wmodal', function($compile, $rootScope){
 	"ngInject";
 	/*
 	*	Modals
 	*/
-		this.modals = [];
+		var self = this;
+		self.modals = [];
 		this.modal_link = function(scope, el){
 			scope.close = function(){
-				for (var i = 0; i < this.modals.length; i++) {
-					if(this.modals[i].id==scope.id){
-						this.modals.splice(i, 1);
+				for (var i = 0; i < self.modals.length; i++) {
+					if(self.modals[i].id==scope.id){
+						self.modals.splice(i, 1);
 						break;
 					}
 				}
-				if(this.modals.length == 0){
+				if(self.modals.length == 0){
 					angular.element(document).find('html').removeClass('noscroll');
 				}
 				if(scope.cb) scope.cb();
 				el.remove();
 			}
-			for (var i = 0; i < this.modals.length; i++) {
-				if(this.modals[i].id==scope.id){
-					this.modals[i].close = scope.close;
-					scope._data = this.modals[i];
-					for(var key in this.modals[i]){
-						scope[key] = this.modals[i][key];
+			for (var i = 0; i < self.modals.length; i++) {
+				if(self.modals[i].id==scope.id){
+					self.modals[i].close = scope.close;
+					scope._data = self.modals[i];
+					for(var key in self.modals[i]){
+						scope[key] = self.modals[i][key];
 					}
 					break;
 				}
@@ -40,7 +41,7 @@ angular.module("wmodal_modal", [])
 				modal += '" ng-controller="wparent"></ng-include>';
 			}
 			modal += '</wmodal>';
-			this.modals.push(obj);
+			self.modals.push(obj);
 			var body = angular.element(document).find('body').eq(0);
 			body.append($compile(angular.element(modal))($rootScope));
 			angular.element(document).find('html').addClass('noscroll');
@@ -88,7 +89,7 @@ angular.module("wmodal_modal", [])
 				modal += '" ng-controller="wparent"></ng-include>';
 			}
 			modal += '</wpopup>';
-			this.modals.push(obj);
+			self.modals.push(obj);
 			var body = angular.element(document).find('body').eq(0);
 			body.append($compile(angular.element(modal))($rootScope));
 			angular.element(document).find('html').addClass('noscroll');
