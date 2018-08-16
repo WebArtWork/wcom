@@ -65,7 +65,7 @@ mongo.delete('colName', {
 		_id: doc._id
 }, {
 		name: 'admin'
-}, () => {
+}, function() {
 		console.log('document is updated');
 });
 ``` 
