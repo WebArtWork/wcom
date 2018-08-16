@@ -1,4 +1,7 @@
-angular.module("wcom", ["wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_services", "wcom_mongo", "wcom_filters", "wcom_directives"]);
+angular.module("wcom", ["wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_services", "wcom_sd", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives"]);
+angular.module("wmodal_modal.html", []).run(["$templateCache", function($templateCache) {
+	$templateCache.put("wmodal_modal.html", "<div class='modal' ng-class=\"{full: full, cover: cover}\"><div class='modal_fade' ng-click='close();' title='Close'></div><div class='modal_content viewer'><i class='icon icon-close close-m' ng-click='close();' title='Close'></i><h2 ng-if=\"header\">{{header}}</h2><p ng-if=\"content\">{{content}}</p><ng-transclude></ng-transclude></div></div>");
+}]);
 angular.module("wcom_wtags.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wcom_wtags.html", "<label class='wtags'><span class='wtag' ng-repeat='tag in tags'>#{{tag}} <i class='icon icon-close' ng-click='tags.splice($index, 1); update_tags();'></i></span><input type='text' placeholder='new tag' ng-model='new_tag' ng-keyup='enter($event)'></label>");
 }]);
@@ -217,259 +220,611 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 		return h;
 	}
 });
+angular.module("wcom_sd", [])
+
 angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, socket){
-	/*
-    *    Data will be storage for all information we are pulling from waw crud.
-    *    data['arr' + part] will host all docs from collection part in array form
-    *    data['obj' + part] will host all docs from collection part in object form
-    *    data['opts' + part] will host options for docs from collection part
-    *        Will be initialized only inside get
-    *        Will be used inside push
-    */
-		var data = {};
-	/*
-	*	waw crud connect functions
-	*/
-		this.create = function(part, doc, cb) {
-			if (typeof doc == 'function') {
-				cb = doc;
-				doc = {};
+	var self = this, replaces={}, options={}, docs={};
+	self.cl = {}; // collection
+	self.clpc = {}; // complete collection pulled boolean
+	self._id = function(cb){
+		if(typeof cb != 'function') return;
+		$http.get('/waw/newId').then(function(resp){
+			cb(resp.data);
+		});
+	};
+	var replace = function(doc, value, rpl){
+		if(typeof rpl == 'function'){
+			rpl(doc[value], function(newValue){
+				doc[value] = newValue;
+			}, doc);
+		}
+	};
+	self.push = function(part, doc, rpl){
+		if(rpl){
+			for(var key in rpl){
+				replace(doc, key, rpl[key]);
 			}
-			$http.post('/api/' + part + '/create/', doc || {})
-				.then(function(resp) {
-					if (resp.data) {
-						push(part, resp.data);
-						if (typeof cb == 'function') cb(resp.data);
-					} else if (typeof cb == 'function') {
-						cb(false);
-					}
-				})
-		};
-		this.get = function(part, opts, cb) {
-			if (typeof opts == 'function') {
-				cb = opts;
-				opts = {};
+		}
+		if(Array.isArray(self.cl[part])){
+			self.cl[part].push(doc);
+		}
+	};
+	self.unshift = function(part, doc, rpl){
+		if(rpl){
+			for(var key in rpl){
+				replace(doc, key, rpl[key]);
 			}
-			if(Array.isArray(data['arr' + part])){
-				if(typeof cb == 'function'){
-					cb(data['arr' + part], data['obj' + part]);
-				}
-				return data['arr' + part];
-			}
-			data['arr' + part] = [];
-			data['obj' + part] = {};
-			data['opts' + part] = opts || {};
-			$http.get('/api/' + part + '/get')
-				.then(function(resp) {
-					if (resp.data) {
-						for (var i = 0; i < resp.data.length; i++) {
-							push(part, resp.data[i]);
+		}
+		Array.isArray(self.cl[part])&&self.cl[part].unshift(doc);
+	};
+	self.use = function(part, cb){
+		if(!self.clpc[part]){
+			return $timeout(function(){
+				self.use(part, cb);
+			}, 250);
+		}
+		return cb&&cb(self.cl[part]);
+	};
+	self.get = function(part, rpl, opts, cb){
+		if(typeof rpl == 'function') cb = rpl;
+		if(typeof opts == 'function') cb = opts;
+		if(Array.isArray(self.cl[part])) return self.cl[part];
+		if(!Array.isArray(self.cl[part])) self.cl[part] = [];
+		replaces[part] = rpl;
+		options[part] = opts;
+		var pull;
+		if(opts&&opts.query){
+			pull = $http.get('/api/'+part+'/'+opts.query);
+		}else pull = $http.get('/api/'+part+'/get');
+		pull.then(function(resp){
+			if(Array.isArray(resp.data)){
+				for (var i = 0; i < resp.data.length; i++) {
+					docs[part+'_'+resp.data[i]._id] = resp.data[i];
+					self.cl[part].push(resp.data[i]);
+					if(rpl){
+						for(var key in rpl){
+							replace(resp.data[i], key, rpl[key]);
 						}
-						if (typeof cb == 'function') cb(data['arr' + part], data['obj' + part]);
-					} else if (typeof cb == 'function') {
-						cb(false);
 					}
-					data['loaded'+part]= true;
-				})
-			return data['arr' + part];
-		};
-		this.updateAll = function(part, doc, opts, cb) {
-			if (typeof opts == 'function') {
-				cb = opts;
-				opts = {};
-			}
-			if (typeof opts != 'object') opts = {};
-			if (opts.fields) {
-				if (typeof opts.fields == 'string') opts.fields = opts.fields.split(' ');
-				var _doc = {};
-				for (var i = 0; i < opts.fields.length; i++) {
-					_doc[opts.fields[i]] = doc[opts.fields[i]];
 				}
-				doc = _doc;
 			}
-			$http.post('/api/' + part + '/update/all' + (opts.name || ''), doc)
-				.then(function(resp) {
-					if (resp.data && typeof cb == 'function') {
-						cb(resp.data);
-					} else if (typeof cb == 'function') {
-						cb(false);
-					}
-				});
-		};
-		this.updateUnique = function(part, doc, opts, cb) {
-			if (!opts) opts = '';
-			if (typeof opts == 'function') {
-				cb = opts;
-				opts = '';
-			}
-			if (typeof opts != 'object') opts = {};
-			if (opts.fields) {
-				if (typeof opts.fields == 'string') opts.fields = opts.fields.split(' ');
-				var _doc = {};
-				for (var i = 0; i < opts.fields.length; i++) {
-					_doc[opts.fields[i]] = doc[opts.fields[i]];
-				}
-				doc = _doc;
-			}
-			$http.post('/api/' + part + '/unique/field' + opts, doc).
-			then(function(resp) {
-				if (typeof cb == 'function') {
-					cb(resp.data);
-				}
-			});
-		};
-		this.delete = function(part, doc, opts, cb) {
-			if (!opts) opts = '';
-			if (!doc) return;
-			if (typeof opts == 'function') {
-				cb = opts;
-				opts = '';
-			}
-			$http.post('/api/' + part + '/delete' + opts, doc)
-				.then(function(resp) {
-					if (resp.data && Array.isArray(data['arr' + part])) {
-						for (var i = 0; i < data['arr' + part].length; i++) {
-							if (data['arr' + part][i]._id == doc._id) {
-								data['arr' + part].splice(i, 1);
-								break;
-							}
+			if(opts){
+				if(opts.sort) self.cl[part].sort(opts.sort);
+				if(opts.populate){
+					if(Array.isArray(opts.populate)){
+						for (var i = 0; i < opts.populate.length; i++) {
+							self.populate(part, opts.populate[i].model, opts.populate[i].path);
 						}
-						delete data['obj' + part][doc._id];
+					}else if(typeof opts.populate == 'object'){
+						self.populate(part, opts.populate.model, opts.populate.path);
 					}
-					if (resp && typeof cb == 'function') {
-						cb(resp.data);
-					} else if (typeof cb == 'function') {
-						cb(false);
+				};
+			}
+			self.clpc[part] = true;
+			typeof cb=='function'&&cb(self.cl[part]);
+		}, function(err){
+			console.log(err);
+		});
+		return self.cl[part];
+	};
+	self.run = function(parts, cb){
+		if(Array.isArray(parts)){
+			for (var i = 0; i < parts.length; i++) {
+				if (!self.clpc[parts[i]]) {
+					return $timeout(function() {
+						self.run(parts, cb);
+					}, 250);
+				}
+			}
+		}else if(typeof parts == 'string'){
+			if (!self.clpc[parts]) {
+				return $timeout(function() {
+					self.run(parts, cb);
+				}, 250);
+			}
+		}
+		cb();
+	};
+
+	self.populate = function(toPart, fromPart, toField, fields, cb){
+		if(typeof fields == 'function'){
+			cb = fields;
+			fields = null;
+		}
+		if(!self.clpc[toPart]||!self.clpc[fromPart]){
+			return $timeout(function(){
+				self.populate(toPart, fromPart, toField, fields, cb);
+			}, 250);
+		}
+		for (var i = 0; i < self.cl[toPart].length; i++) {
+			fill(self.cl[toPart][i], fromPart, toField, fields, cb);
+		}
+		cb&&cb();
+	};
+	self.fill = function(obj, fromPart, toField, fields, cb){
+		if(typeof fields == 'function'){
+			cb = fields;
+			fields = null;
+		}
+		if(!self.clpc[fromPart]){
+			return $timeout(function(){
+				self.fill(obj, fromPart, toField, fields, cb);
+			}, 250);
+		}
+		fill(obj, fromPart, toField, fields, cb);
+	};
+	var fill = function(obj, fromPart, toField, fields, cb){
+		while(toField.indexOf('.')>-1){
+			toField = toField.split('.');
+			obj = obj[toField.shift()];
+			toField = toField.join('.');
+			if(Array.isArray(obj)){
+				for (var i = 0; i < obj.length; i++) {
+					self.fill(obj[i], fromPart, toField, fields, cb);
+				}
+				return;
+			}
+		}
+		if(Array.isArray(obj[toField])){
+			for (var k = obj[toField].length - 1; k >= 0; k--) {
+				if(docs[fromPart+'_'+obj[toField][k]]){
+					fill_obj(obj[toField], k, docs[fromPart+'_'+obj[toField][k]], fields);
+				}else{
+					obj[toField].splice(k, 1);
+				}
+			}
+		}else if(docs[fromPart+'_'+obj[toField]]){
+			fill_obj(obj, toField, docs[fromPart+'_'+obj[toField]], fields);
+		}else{
+			delete obj[toField];
+		}
+		cb&&cb();
+	}
+	var fill_obj = function(obj, to, doc, fields){
+		if (fields) {
+			obj[to] = {};
+			for (var key in fields) {
+				obj[to][key] = doc[key];
+			}
+		} else obj[to] = doc;
+	}
+
+	self.create = function(part, obj, cb){
+		if(typeof obj == 'function'){
+			cb = obj;
+			obj = {};
+		}
+		$http.post('/api/'+part+'/create', obj||{})
+		.then(function(resp){
+			if(resp.data){
+				self.push(part, resp.data, replaces[part]);
+				var o = options[part];
+				if(o&&o.sort)
+					self.cl[part].sort(o.sort);
+				if(o&&o.populate){
+					if (Array.isArray(o.populate)) {
+						for (var i = 0; i < o.populate.length; i++) {
+							self.fill(resp.data, o.populate[i].model, o.populate[i].path);
+						}
+					} else if (typeof o.populate == 'object') {
+						self.fill(resp.data, o.populate.model, o.populate.path);
 					}
-				});
-		};
-		this._id = function(cb) {
-			if (typeof cb != 'function') return;
-			$http.get('/waw/newId').then(function(resp) {
+				}
+				if(typeof cb == 'function') cb(resp.data);
+			}else if(typeof cb == 'function'){
+				cb(false);
+			}
+		});
+	};
+	self.afterWhile = function(obj, cb, time){
+		$timeout.cancel(obj.updateTimeout);
+		obj.updateTimeout = $timeout(cb, time||1000);
+	};
+	self.update = function(part, obj, custom, cb){
+		if(typeof custom == 'function') cb = custom;
+		if(typeof custom != 'string') custom = '';
+		if(!obj) return;
+		$timeout.cancel(obj.updateTimeout);
+		if(socket) obj.print = socket.id;
+		$http.post('/api/'+part+'/update'+(obj._name||''), obj)
+		.then(function(resp){
+			if(resp.data&&typeof cb == 'function'){
 				cb(resp.data);
-			});
-		};
-		this.to_id = function(docs) {
-			if (!arr) return [];
-			if(Array.isArray(docs)){
-	        	docs = docs.slice();
-	        }else if(typeof docs == 'object'){
-	        	if(docs._id) return [docs._id];
-	        	var _docs = [];
-	        	for(var key in docs){
-	        		if(docs[key]) _docs.push(docs[key]._id||docs[key]);
-	        	}
-	        	docs = _docs;
-	        }
-			for (var i = 0; i < docs.length; ++i) {
-				if (docs[i]) docs[i] = docs[i]._id || docs[i];
+			}else if(typeof cb == 'function'){
+				cb(false);
 			}
-			return docs;
+		});
+	};
+	self.updateAll = function(part, obj, custom, cb){
+		if(typeof custom == 'function') cb = custom;
+		if(typeof custom != 'string') custom = '';
+		$http.post('/api/'+part+'/update/all'+custom, obj).then(function(resp){
+			if(resp.data&&typeof cb == 'function'){
+				cb(resp.data);
+			}else if(typeof cb == 'function'){
+				cb(false);
+			}
+		});
+	};
+	self.updateUnique = function(part, obj, custom, cb){
+		if(!custom) custom='';
+		if(typeof custom == 'function'){
+			cb = custom;
+			custom='';
 		}
-		this.afterWhile = function(doc, cb, time) {
-			if (cb && typeof time == 'number') {
-				$timeout.cancel(doc.updateTimeout);
-				doc.updateTimeout = $timeout(cb, time || 1000);
+		$http.post('/api/'+part+'/unique/field'+custom, obj).then(function(resp){
+			if(typeof cb == 'function'){
+				cb(resp.data);
 			}
-		};
-		var populate = this.populate = function(doc, field, part){	
-			if(!doc||!field||!part) return;
-			if(data['loaded'+part]){
-				console.log(data['obj' + part]);
-				if(Array.isArray(field)){
-					for(var i = 0; i < field.length; i++){
-						populate(doc, field[i], part);
+		});
+	};
+
+	self.updateAfterWhile = function(part, obj, cb){
+		$timeout.cancel(obj.updateTimeout);
+		obj.updateTimeout = $timeout(function(){
+			self.update(part, obj, cb);
+		}, 1000);
+	};
+	self.updateAfterWhileAll = function(part, obj, cb){
+		$timeout.cancel(obj.updateTimeout);
+		obj.updateTimeout = $timeout(function(){
+			self.updateAll(part, obj, cb);
+		}, 1000);
+	};
+
+	self.delete = function(part, obj, custom, cb){
+		if(!custom) custom='';
+		if(!obj) return;
+		if(typeof custom == 'function'){
+			cb = custom;
+			custom = '';
+		}
+		$http.post('/api/'+part+'/delete'+custom, obj).then(function(resp){
+			if(resp.data&&Array.isArray(self.cl[part])){
+				for (var i = 0; i < self.cl[part].length; i++) {
+					if(self.cl[part][i]._id == obj._id){
+						self.cl[part].splice(i, 1);
+						break;
 					}
-					return;
-				}else if(field.indexOf('.')>-1){
-					field = field.split('.');
-					var sub = field.shift();
-					if(typeof doc[sub] != 'object') return;
-					return populate(doc[sub], field.join('.'), part);
 				}
-				if(Array.isArray(doc[field])){
-					for(var i = doc[field].length-1; i >= 0; i--){
-						if(data['obj'+part][doc[field][i]]){
-							doc[field][i] = data['obj'+part][doc[field][i]]
-						}else{
-							doc[field].splice(i, 1);
+			}
+			if(resp.data&&typeof cb == 'function'){
+				cb(resp.data);
+			}else if(typeof cb == 'function'){
+				cb(false);
+			}
+		});
+	};
+
+	self.inDocs = function(doc, docs){
+		for (var i = 0; i < docs.length; i++) {
+			if(docs[i]._id == doc._id) return true;
+		}
+		return false;
+	};
+	self.c_text = function(text, clear){
+		text = text.split(clear||' ');
+		for (var i = text.length - 1; i >= 0; i--) {
+			if(text[i]=='') text.splice(i, 1);
+		}
+		return text.join('');
+	};
+	// doc fill
+	self.beArray = function(val, cb){
+		if(!Array.isArray(val)) cb([]);
+		else cb(val);
+	};
+	self.forceObj = function(val, cb){
+		cb({})
+	};
+	self.user_is = function(users, is){
+		var get_arr = [];
+		for (var i = 0; i < users.length; i++) {
+			if(users[i].is&&users[i].is[is]){
+				get_arr.push(users[i]);
+			}
+		}
+		return get_arr;
+	}
+	self.rpla = function(str, div){
+		if(!div) div=' ';
+		return str.split(div).join('');
+	}
+	self.arr_to_id =function(arr){
+		var new_arr = [];
+		for (var i = 0; i < arr.length; i++) {
+			if(arr[i]._id) new_arr.push(arr[i]._id);
+		}
+		return new_arr;
+	}
+	// search in docs
+	self.keepByBiggerNumber = function(docs, field, number){
+		for (var i = docs.length - 1; i >= 0; i--) {
+			if(Array.isArray(docs[i][field])){
+				var keep = false;
+				for (var j = 0; j < docs[i][field].length; j++) {
+					if (docs[i][field][j] >= number) {
+						keep = true;
+						break;
+					}
+				}
+				if(keep) continue;
+			}else{
+				if(docs[i][field] >= number){
+					continue;
+				}
+			}
+			docs.splice(i, 1);
+		}
+	};
+	self.keepBySmallerNumber = function(docs, field, number){
+		for (var i = docs.length - 1; i >= 0; i--) {
+			if(Array.isArray(docs[i][field])){
+				var keep = false;
+				for (var j = 0; j < docs[i][field].length; j++) {
+					if (docs[i][field][j] <= number) {
+						keep = true;
+						break;
+					}
+				}
+				if(keep) continue;
+			}else{
+				if(docs[i][field] <= number){
+					continue;
+				}
+			}
+			docs.splice(i, 1);
+		}
+	};
+	self.cutByBiggerNumber = function(docs, field, number){};
+	self.cutBySmallerNumber = function(docs, field, number){};
+	self.keepByText = function(docs, field, string, equal){
+		string = string.toLowerCase();
+		for (var i = docs.length - 1; i >= 0; i--) {
+			if(Array.isArray(docs[i][field])){
+				var keep = false;
+				for (var j = 0; j < docs[i][field].length; j++) {
+					if (equal) {
+						if (docs[i][field][j].toLowerCase() == string) {
+							keep = true;
+							break;
+						}
+					} else {
+						if (docs[i][field][j].toLowerCase().indexOf(string)>-1) {
+							keep = true;
+							break;
 						}
 					}
-					return;
-				}else if(typeof doc[field] == 'string'){
-					doc[field] = data['obj'+part][doc[field]] || null;
-				}else return;
-			    }else {
-	            	  $timeout(function(){
-					  populate(doc, field, part);
-				      }, 250);
-                }
-                console.log(data['obj' + part]);
-        }
-	/*
-	*	mongo replace support functions
-	*/
-		this.beArr = function(val, cb) {
-			if (!Array.isArray(val)) cb([]);
-			else cb(val);
-		};
-		this.beObj = function(val, cb) {
-			if (typeof val != 'object' || Array.isArray(val)) {
-				val = {};
-			}
-			cb(val);
-		}
-		this.beDate = function(val, cb) {
-				cb(new Date(val) ) 
-		}
-		this.forceArr = function(cb) {
-			cb([]);
-		};
-		this.forceObj = function(cb) {
-			cb({});
-		}
-	/*
-	*	mongo local support functions
-	*/
-		var replace = function(doc, value, rpl) {
-			if (value.indexOf('.') > -1) {
-				value = value.split('.');
-				var sub = value.shift();
-				if (doc[sub] && (typeof doc[sub] != 'object' || Array.isArray(doc[sub])))
-					return;
-				if (!doc[sub]) doc[sub] = {};
-				return replace(doc[sub], value.join('.'), rpl);
-			}
-			if (typeof rpl == 'function') {
-				rpl(doc[value], function(newValue) {
-					doc[value] = newValue;
-				}, doc);
-			}
-		};
-		var push = function(part, doc) {
-			if (data['opts' + part].replace) {
-				for (var key in data['opts' + part].replace) {
-					replace(doc, key, data['opts' + part].replace[key]);
+				}
+				if(keep) continue;
+			}else{
+				if(equal){
+					if(docs[i][field].toLowerCase() == string){
+						continue;
+					}
+				}else{
+					if(docs[i][field].toLowerCase().indexOf(string)>-1){
+						continue;
+					}
 				}
 			}
-			if(data['opts'+part].populate){
-				var p = data['opts'+part].populate;
-				if(Array.isArray(p)){
-					for(var i = 0; i < p.length; i++){
-						if(typeof p == 'object' && p[i].field && p[i].part){
-							populate(doc, p[i].field, p[i].part);
+			docs.splice(i, 1);
+		}
+	};
+	self.cutByText = function(docs, field, string, equal){
+		string = string.toLowerCase();
+		for (var i = docs.length - 1; i >= 0; i--) {
+			if(Array.isArray(docs[i][field])){
+				for (var j = 0; j < docs[i][field].length; j++) {
+					if (equal) {
+						if (docs[i][field][j].toLowerCase() == string) {
+							docs.splice(i, 1);
+							break;
+						}
+					} else {
+						if (docs[i][field][j].toLowerCase().indexOf(string)>-1) {
+							docs.splice(i, 1);
+							break;
 						}
 					}
-				}else if(typeof p == 'object' && p.field && p.part){
-					populate(doc, p.field, p.part);
+				}
+			}else{
+				if(equal){
+					if(docs[i][field].toLowerCase() == string){
+						docs.splice(i, 1);
+					}
+				}else{
+					if(docs[i][field].toLowerCase().indexOf(string)>-1){
+						docs.splice(i, 1);
+					}
 				}
 			}
-			data['arr' + part].push(doc);
-			data['obj' + part][doc._id] = doc;
+		}
+	};
+});
+angular.module("wmodal_modal", [])
+.service('wmodal', function($compile, $rootScope){
+	"ngInject";
+	/*
+	*	Modals
+	*/
+		this.modals = [];
+		this.modal_link = function(scope, el){
+			scope.close = function(){
+				for (var i = 0; i < this.modals.length; i++) {
+					if(this.modals[i].id==scope.id){
+						this.modals.splice(i, 1);
+						break;
+					}
+				}
+				if(this.modals.length == 0){
+					angular.element(document).find('html').removeClass('noscroll');
+				}
+				if(scope.cb) scope.cb();
+				el.remove();
+			}
+			for (var i = 0; i < this.modals.length; i++) {
+				if(this.modals[i].id==scope.id){
+					this.modals[i].close = scope.close;
+					scope._data = this.modals[i];
+					for(var key in this.modals[i]){
+						scope[key] = this.modals[i][key];
+					}
+					break;
+				}
+			}
+		}
+		this.modal = function(obj){
+			if(!obj.id) obj.id = Date.now();
+			var modal = '<wmodal id="'+obj.id+'">';
+			if(obj.template) modal += obj.template;
+			else if(obj.templateUrl){
+				modal += '<ng-include src="';
+				modal += "'"+obj.templateUrl+"'";
+				modal += '" ng-controller="wparent"></ng-include>';
+			}
+			modal += '</wmodal>';
+			this.modals.push(obj);
+			var body = angular.element(document).find('body').eq(0);
+			body.append($compile(angular.element(modal))($rootScope));
+			angular.element(document).find('html').addClass('noscroll');
 		}
 	/*
-	*	Endof Mongo Service
+	*	Morphs
 	*/
+
+	/*
+	*	Popups
+	*/
+		this.popups = [];
+		this.popup_link = function(scope, el){
+			scope.close = function(){
+				for (var i = 0; i < this.popups.length; i++) {
+					if(this.popups[i].id==scope.id){
+						this.popups.splice(i, 1);
+						break;
+					}
+				}
+				if(this.popups.length == 0){
+					angular.element(document).find('html').removeClass('noscroll');
+				}
+				if(scope.cb) scope.cb();
+				el.remove();
+			}
+			for (var i = 0; i < this.popups.length; i++) {
+				if(this.popups[i].id==scope.id){
+					this.popups[i].close = scope.close;
+					scope._data = this.popups[i];
+					for(var key in this.popups[i]){
+						scope[key] = this.popups[i][key];
+					}
+					break;
+				}
+			}
+		}
+		this.popup = function(obj){
+			if(!obj.id) obj.id = Date.now();
+			var modal = '<wpopup id="'+obj.id+'">';
+			if(obj.template) modal += obj.template;
+			else if(obj.templateUrl){
+				modal += '<ng-include src="';
+				modal += "'"+obj.templateUrl+"'";
+				modal += '" ng-controller="wparent"></ng-include>';
+			}
+			modal += '</wpopup>';
+			this.modals.push(obj);
+			var body = angular.element(document).find('body').eq(0);
+			body.append($compile(angular.element(modal))($rootScope));
+			angular.element(document).find('html').addClass('noscroll');
+		}
+	/*
+	*	Spinners
+	*/
+		this.spinners = [];
+		this.spinner_link = function(scope, el){
+			scope.close = function(){
+				for (var i = 0; i < this.spinners.length; i++) {
+					if(this.spinners[i].id==scope.id){
+						this.spinners.splice(i, 1);
+						break;
+					}
+				}
+				if(this.spinners.length == 0){
+					angular.element(document).find('html').removeClass('noscroll');
+				}
+				if(scope.cb) scope.cb();
+				el.remove();
+			}
+			for (var i = 0; i < this.spinners.length; i++) {
+				if(this.spinners[i].id==scope.id){
+					this.spinners[i].close = scope.close;
+					scope._data = this.spinners[i];
+					for(var key in this.spinners[i]){
+						scope[key] = this.spinners[i][key];
+					}
+					break;
+				}
+			}
+		}
+		this.spinner = function(obj){
+			if(!obj.id) obj.id = Date.now();
+			var modal = '<wspinner id="'+obj.id+'">';
+			if(obj.template) modal += obj.template;
+			else if(obj.templateUrl){
+				modal += '<ng-include src="';
+				modal += "'"+obj.templateUrl+"'";
+				modal += '" ng-controller="wparent"></ng-include>';
+			}
+			modal += '</wspinner>';
+			this.spinners.push(obj);
+			var body = angular.element(document).find('body').eq(0);
+			body.append($compile(angular.element(modal))($rootScope));
+			angular.element(document).find('html').addClass('noscroll');
+		}
+	/*
+	*	End of wmodal
+	*/
+}).directive('wmodal', function(wmodal) {
+	"ngInject";
+	return {
+		restrict: 'E',
+		transclude: true,
+		scope: {
+			id: '@'
+		}, link: wmodal.modal_link, templateUrl: 'wmodal_modal.html'
+	};
+}).directive('wpopup', function(wmodal) {
+	"ngInject";
+	return {
+		restrict: 'E',
+		transclude: true,
+		scope: {
+			id: '@'
+		}, link: wmodal.popup_link, templateUrl: 'wmodal_popup.html'
+	};
+}).directive('wspinner', function(wmodal) {
+	"ngInject";
+	return {
+		restrict: 'E',
+		transclude: true,
+		scope: {
+			id: '@'
+		}, link: wmodal.spinner_link, templateUrl: 'wmodal_spinner.html'
+	};
+}).controller('wparent', function($scope, $timeout) {
+	"ngInject";
+	$timeout(function(){
+		if($scope.$parent.$parent._data){
+			for (var key in $scope.$parent.$parent._data) {
+				$scope[key] = $scope.$parent.$parent._data[key];
+			}
+		}
+		if($scope.$parent._data){
+			for (var key in $scope.$parent._data) {
+				$scope[key] = $scope.$parent._data[key];
+			}
+		}
+	});
 });
 String.prototype.rAll = function(search, replacement) {
     var target = this;
