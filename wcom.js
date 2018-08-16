@@ -1,4 +1,4 @@
-angular.module("wcom", ["wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_services", "wcom_sd", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives"]);
+angular.module("wcom", ["wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_spinner", "wcom_services", "wcom_sd", "wcom_popup", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives"]);
 angular.module("wmodal_modal.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wmodal_modal.html", "<div class='modal' ng-class=\"{full: full, cover: cover}\"><div class='modal_fade' ng-click='close();' title='Close'></div><div class='modal_content viewer'><i class='icon icon-close close-m' ng-click='close();' title='Close'></i><h2 ng-if=\"header\">{{header}}</h2><p ng-if=\"content\">{{content}}</p><ng-transclude></ng-transclude></div></div>");
 }]);
@@ -11,6 +11,64 @@ angular.module("wcom_wmodaeratorsview.html", []).run(["$templateCache", function
 angular.module("wcom_wmodaerators.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wcom_wmodaerators.html", "<label class=\"wtags\"><span class='wtag' ng-repeat='obj in arr'><img ng-src='{{obj.avatarUrl}}' alt='{{obj.name}}'><span>{{obj.name}}</span><i class='icon icon-close' ng-click='arr.splice($index, 1); change();'></i></span><input type='text' placeholder='{{holder}}' ng-model='object.new_moderator'></label><div ng-if='object.new_moderator'><div ng-repeat='user in users|rArr:arr|filter:object.new_moderator' ng-click='arr.push(user); object.new_moderator=null; change();'><img ng-src='{{user.avatarUrl}}' alt='{{user.name}}'><span>{{user.name}}</span></div></div>");
 }]);
+angular.module("wcom_spinner", [])
+.service('spinner', function($compile, $rootScope){
+	"ngInject";
+	/*
+	*	Spinners
+	*/
+	var self = this;
+	this.spinners = [];
+	this.spinner_link = function(scope, el){
+		scope.close = function(){
+			for (var i = 0; i < this.spinners.length; i++) {
+				if(this.spinners[i].id==scope.id){
+					this.spinners.splice(i, 1);
+					break;
+				}
+			}
+			if(this.spinners.length == 0){
+				angular.element(document).find('html').removeClass('noscroll');
+			}
+			if(scope.cb) scope.cb();
+			el.remove();
+		}
+		for (var i = 0; i < this.spinners.length; i++) {
+			if(this.spinners[i].id==scope.id){
+				this.spinners[i].close = scope.close;
+				scope._data = this.spinners[i];
+				for(var key in this.spinners[i]){
+					scope[key] = this.spinners[i][key];
+				}
+				break;
+			}
+		}
+	}
+	this.spinner = function(obj){
+		if(!obj.id) obj.id = Date.now();
+		var modal = '<spinner id="'+obj.id+'">';
+		if(obj.template) modal += obj.template;
+		else if(obj.templateUrl){
+			modal += '<ng-include src="';
+			modal += "'"+obj.templateUrl+"'";
+			modal += '" ng-controller="wparent"></ng-include>';
+		}
+		modal += '</spinner>';
+		this.spinners.push(obj);
+		var body = angular.element(document).find('body').eq(0);
+		body.append($compile(angular.element(modal))($rootScope));
+		angular.element(document).find('html').addClass('noscroll');
+	}
+}).directive('spinner', function(modal) {
+	"ngInject";
+	return {
+		restrict: 'E',
+		transclude: true,
+		scope: {
+			id: '@'
+		}, link: modal.spinner_link, templateUrl: 'wmodal_spinner.html'
+	};
+});
 angular.module("wcom_services", []).run(function($rootScope, $compile){
 	var body = angular.element(document).find('body').eq(0);
 	body.append($compile(angular.element('<pullfiles></pullfiles>'))($rootScope));
@@ -222,6 +280,64 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 });
 angular.module("wcom_sd", [])
 
+angular.module("wcom_popup", [])
+.service('popup', function($compile, $rootScope){
+	"ngInject";
+	/*
+	*	Popups
+	*/
+	var self = this;
+	this.popups = [];
+	this.popup_link = function(scope, el){
+		scope.close = function(){
+			for (var i = 0; i < this.popups.length; i++) {
+				if(this.popups[i].id==scope.id){
+					this.popups.splice(i, 1);
+					break;
+				}
+			}
+			if(this.popups.length == 0){
+				angular.element(document).find('html').removeClass('noscroll');
+			}
+			if(scope.cb) scope.cb();
+			el.remove();
+		}
+		for (var i = 0; i < this.popups.length; i++) {
+			if(this.popups[i].id==scope.id){
+				this.popups[i].close = scope.close;
+				scope._data = this.popups[i];
+				for(var key in this.popups[i]){
+					scope[key] = this.popups[i][key];
+				}
+				break;
+			}
+		}
+	}
+	this.popup = function(obj){
+		if(!obj.id) obj.id = Date.now();
+		var modal = '<popup id="'+obj.id+'">';
+		if(obj.template) modal += obj.template;
+		else if(obj.templateUrl){
+			modal += '<ng-include src="';
+			modal += "'"+obj.templateUrl+"'";
+			modal += '" ng-controller="wparent"></ng-include>';
+		}
+		modal += '</popup>';
+		self.modals.push(obj);
+		var body = angular.element(document).find('body').eq(0);
+		body.append($compile(angular.element(modal))($rootScope));
+		angular.element(document).find('html').addClass('noscroll');
+	}
+}).directive('popup', function(modal) {
+	"ngInject";
+	return {
+		restrict: 'E',
+		transclude: true,
+		scope: {
+			id: '@'
+		}, link: modal.popup_link, templateUrl: 'wmodal_popup.html'
+	};
+});
 angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, socket){
 	/*
     *    Data will be storage for all information we are pulling from waw crud.
@@ -525,98 +641,6 @@ angular.module("wcom_modal", [])
 			angular.element(document).find('html').addClass('noscroll');
 		}
 	/*
-	*	Morphs
-	*/
-
-	/*
-	*	Popups
-	*/
-		this.popups = [];
-		this.popup_link = function(scope, el){
-			scope.close = function(){
-				for (var i = 0; i < this.popups.length; i++) {
-					if(this.popups[i].id==scope.id){
-						this.popups.splice(i, 1);
-						break;
-					}
-				}
-				if(this.popups.length == 0){
-					angular.element(document).find('html').removeClass('noscroll');
-				}
-				if(scope.cb) scope.cb();
-				el.remove();
-			}
-			for (var i = 0; i < this.popups.length; i++) {
-				if(this.popups[i].id==scope.id){
-					this.popups[i].close = scope.close;
-					scope._data = this.popups[i];
-					for(var key in this.popups[i]){
-						scope[key] = this.popups[i][key];
-					}
-					break;
-				}
-			}
-		}
-		this.popup = function(obj){
-			if(!obj.id) obj.id = Date.now();
-			var modal = '<wpopup id="'+obj.id+'">';
-			if(obj.template) modal += obj.template;
-			else if(obj.templateUrl){
-				modal += '<ng-include src="';
-				modal += "'"+obj.templateUrl+"'";
-				modal += '" ng-controller="wparent"></ng-include>';
-			}
-			modal += '</wpopup>';
-			self.modals.push(obj);
-			var body = angular.element(document).find('body').eq(0);
-			body.append($compile(angular.element(modal))($rootScope));
-			angular.element(document).find('html').addClass('noscroll');
-		}
-	/*
-	*	Spinners
-	*/
-		this.spinners = [];
-		this.spinner_link = function(scope, el){
-			scope.close = function(){
-				for (var i = 0; i < this.spinners.length; i++) {
-					if(this.spinners[i].id==scope.id){
-						this.spinners.splice(i, 1);
-						break;
-					}
-				}
-				if(this.spinners.length == 0){
-					angular.element(document).find('html').removeClass('noscroll');
-				}
-				if(scope.cb) scope.cb();
-				el.remove();
-			}
-			for (var i = 0; i < this.spinners.length; i++) {
-				if(this.spinners[i].id==scope.id){
-					this.spinners[i].close = scope.close;
-					scope._data = this.spinners[i];
-					for(var key in this.spinners[i]){
-						scope[key] = this.spinners[i][key];
-					}
-					break;
-				}
-			}
-		}
-		this.spinner = function(obj){
-			if(!obj.id) obj.id = Date.now();
-			var modal = '<wspinner id="'+obj.id+'">';
-			if(obj.template) modal += obj.template;
-			else if(obj.templateUrl){
-				modal += '<ng-include src="';
-				modal += "'"+obj.templateUrl+"'";
-				modal += '" ng-controller="wparent"></ng-include>';
-			}
-			modal += '</wspinner>';
-			this.spinners.push(obj);
-			var body = angular.element(document).find('body').eq(0);
-			body.append($compile(angular.element(modal))($rootScope));
-			angular.element(document).find('html').addClass('noscroll');
-		}
-	/*
 	*	End of wmodal
 	*/
 }).directive('modal', function(modal) {
@@ -627,24 +651,6 @@ angular.module("wcom_modal", [])
 		scope: {
 			id: '@'
 		}, link: modal.modal_link, templateUrl: 'wmodal_modal.html'
-	};
-}).directive('wpopup', function(modal) {
-	"ngInject";
-	return {
-		restrict: 'E',
-		transclude: true,
-		scope: {
-			id: '@'
-		}, link: modal.popup_link, templateUrl: 'wmodal_popup.html'
-	};
-}).directive('wspinner', function(modal) {
-	"ngInject";
-	return {
-		restrict: 'E',
-		transclude: true,
-		scope: {
-			id: '@'
-		}, link: modal.spinner_link, templateUrl: 'wmodal_spinner.html'
 	};
 }).controller('wparent', function($scope, $timeout) {
 	"ngInject";
