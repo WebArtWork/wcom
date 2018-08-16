@@ -477,7 +477,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 	*/
 });
 angular.module("wcom_modal", [])
-.service('wmodal', function($compile, $rootScope){
+.service('modal', function($compile, $rootScope){
 	"ngInject";
 	/*
 	*	Modals
@@ -509,16 +509,16 @@ angular.module("wcom_modal", [])
 				}
 			}
 		}
-		this.modal = function(obj){
+		this.add = function(obj){
 			if(!obj.id) obj.id = Date.now();
-			var modal = '<wmodal id="'+obj.id+'">';
+			var modal = '<modal id="'+obj.id+'">';
 			if(obj.template) modal += obj.template;
 			else if(obj.templateUrl){
 				modal += '<ng-include src="';
 				modal += "'"+obj.templateUrl+"'";
 				modal += '" ng-controller="wparent"></ng-include>';
 			}
-			modal += '</wmodal>';
+			modal += '</modal>';
 			self.modals.push(obj);
 			var body = angular.element(document).find('body').eq(0);
 			body.append($compile(angular.element(modal))($rootScope));
@@ -619,32 +619,32 @@ angular.module("wcom_modal", [])
 	/*
 	*	End of wmodal
 	*/
-}).directive('wmodal', function(wmodal) {
+}).directive('modal', function(modal) {
 	"ngInject";
 	return {
 		restrict: 'E',
 		transclude: true,
 		scope: {
 			id: '@'
-		}, link: wmodal.modal_link, templateUrl: 'wmodal_modal.html'
+		}, link: modal.modal_link, templateUrl: 'wmodal_modal.html'
 	};
-}).directive('wpopup', function(wmodal) {
+}).directive('wpopup', function(modal) {
 	"ngInject";
 	return {
 		restrict: 'E',
 		transclude: true,
 		scope: {
 			id: '@'
-		}, link: wmodal.popup_link, templateUrl: 'wmodal_popup.html'
+		}, link: modal.popup_link, templateUrl: 'wmodal_popup.html'
 	};
-}).directive('wspinner', function(wmodal) {
+}).directive('wspinner', function(modal) {
 	"ngInject";
 	return {
 		restrict: 'E',
 		transclude: true,
 		scope: {
 			id: '@'
-		}, link: wmodal.spinner_link, templateUrl: 'wmodal_spinner.html'
+		}, link: modal.spinner_link, templateUrl: 'wmodal_spinner.html'
 	};
 }).controller('wparent', function($scope, $timeout) {
 	"ngInject";
