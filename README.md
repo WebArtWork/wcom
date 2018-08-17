@@ -1,6 +1,29 @@
 # wcom waw AngularJS common
 Module which support waw project on basic level, elements and scripts which is needed on all projects.
 
+[Mongo service](https://www.npmjs.com/package/wcom#mongo-service) provide connection between waw crud and everything that will be needed for mongo documents management.
+
+[SD service](https://www.npmjs.com/package/wcom#sd-service) provide collection of functions for general use.
+
+[Modal service](https://www.npmjs.com/package/wcom#modal-service) handling everything that has to be added into modal or alert.
+
+[Popup service](https://www.npmjs.com/package/wcom#popup-service) handling everything that has to be managed as popup on something else.
+
+[Spinner service](https://www.npmjs.com/package/wcom#spinner-service) take care of all loading pieces.
+
+[File service](https://www.npmjs.com/package/wcom#file-service) managing file process, from load any type from user to sent it to server.
+
+[Socket service](https://www.npmjs.com/package/wcom#socket-service) handling the sockets management with server and other clients.
+
+[Image service](https://www.npmjs.com/package/wcom#image-service) take care of everything around pictures on the client side.
+
+[Hash service](https://www.npmjs.com/package/wcom#hash-service) with use of href hash, provide memo sharable points for modals or popups.
+
+Installation:
+```bash
+$ npm i --save wcom
+```
+
 ## Mongo Service
 Mongo Service is an suportive service for combinating AngularJS client with waw CRUD back-end. Example of injecting mongo service:
 ```javasript
@@ -50,12 +73,12 @@ mongo.updateUnique('colName', {
 	_id: doc._id
 }, {
 	name: 'name'
-   }, function(resp) {
-	        if(resp){
-	   			console.log('field updated');
-			} else {
-	   			console.log("field not updated");
-			}
+}, function(resp) {
+	    if(resp){
+	   		console.log('field updated');
+		} else {
+	   		console.log("field not updated");
+		}
 });
 ```
 ### delete `function`
@@ -93,7 +116,7 @@ mongo.to_id({
 provide delay on any action, usefull with input and model change. As parameters accepting document, callback and optionally time. Example:
 ```javascript
 mongo.afterWhile(doc, function() {
-    	console.log('text was wroten');
+    	console.log('text was writen');
 }, 2000)
 ```
 ### populate `function`
@@ -105,9 +128,9 @@ mongo.populate(doc, 'field', 'colName');
 checking value if it's array then we keep it and in other case, we replace it with new array. Example where each doc will have data as array:
 ```javasript
 mongo.get('colName', {
-		replace: {
-	   			'data': mongo.beArr
-    	}
+	replace: {
+	   	'data': mongo.beArr
+    }
 });
 ```
 ### beObj `function`
@@ -124,18 +147,18 @@ mongo.get('colName', {
 convert any value to array within replace options. Example where each doc will have data as empty array:
 ```javasript
 mongo.get('colName', {
-		replace: {
-	   		'data': mongo.forceArr
-    	}
+	replace: {
+	   'data': mongo.forceArr
+    }
 });
 ```
 ### forceObj `function`
 convert any value to object within replace options. Example where each doc will have data as empty object:
 ```javasript
 mongo.get('colName', {
-		replace: {
-	   		'data': mongo.forceObj
-    	}
+	replace: {
+	   	'data': mongo.forceObj
+    }
 });
 ```
 ## SD Service
