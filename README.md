@@ -163,32 +163,40 @@ mongo.get('colName', {
 ```
 ## SD Service
 ## Modal Service
-The basic service for adding and closing modals. Example where we opening modal inside controller or service:
-```javascript```
+The basic service for adding and closing modals. Example where we opening modal from file:
+```javascript
 modal.open({
+	templateUrl: '/html/modal/file.html',
+	name: 'John'
+});
+```
+Example where we opening modal from HTML code:
+```javasript
+modal.open({
+	template: '<div>{{name}}</div>',
 	name: 'John'
 });
 ```
 Example how to use the object we are passing:
-```html```
+```html
 <div>{{name}}</div>
 ```
 Example where we closing modal inside modal html cope:
-```html```
+```html
 <button ng-click="close();">Cancel</button>
 ```
 
 ## Popup Service
 ## Spinner Service
 service for adding and closing spinners. Example where we creating spinner:
-```javasript```
+```javasript
 spinner.open({
 	name: 'John'
 });
 
 ```
 Example where we closing spinner:
-```javascript```
+```javascript
 spinner.close();
 ```
 ## File Service
