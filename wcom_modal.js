@@ -31,7 +31,7 @@ angular.module("wcom_modal", [])
 				}
 			}
 		}
-		this.add = function(obj){
+		this.open = function(obj){
 			if(!obj.id) obj.id = Date.now();
 			var modal = '<modal id="'+obj.id+'">';
 			if(obj.template) modal += obj.template;

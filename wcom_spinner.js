@@ -16,7 +16,7 @@ angular.module("wcom_spinner", [])
             }
 
         }
-        this.add = function(obj) {
+        this.open = function(obj) {
             if (!obj) obj = {};
             if (!obj.id) obj.id = Date.now();
             var modal = '<spinner  id="' + obj.id + '">';
