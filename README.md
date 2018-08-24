@@ -200,6 +200,25 @@ Example where we closing spinner:
 spinner.close();
 ```
 ## File Service
+service can do three functions. Such as, take files from User, load dataUrl of images, and upload file to server. 
+Example where we taking image, loading its dataUrl and uploading to server:
+```javascript
+file.add({
+	id:'idForLabel',
+	width: 500,
+	height: 500
+}, function(dataUrl) {
+	console.log('DataUrl length:', dataUrl.length);
+});
+```
+Example where we taking any file:
+```javascript
+file.add({
+	id:'idForLabel'
+}, function(file) {
+	console.log(file);
+});
+```
 ## Socket Service
 ## Image Service
 ## Hash Service
