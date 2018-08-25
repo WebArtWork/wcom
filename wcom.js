@@ -526,6 +526,19 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
                 }
                 console.log(data['obj' + part]);
         }
+   		var on = this.on = function(parts, cb) {
+   		    if (typeof parts == 'string') {
+   		        parts = parts.split(" ");
+   		    }
+   		    for (var i = 0; i < parts.length; i++) {
+   		        if (!data['loaded'+parts[i]]) {
+   		            return $timeout(function() {
+   		                on(parts, cb);
+   		            }, 100);
+   		        } 
+   		    }
+   		    cb();
+   		}
 	/*
 	*	mongo replace support functions
 	*/

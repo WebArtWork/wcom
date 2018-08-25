@@ -124,6 +124,14 @@ making population on specific field with specific collection. Example with doc w
 ```javasript
 mongo.populate(doc, 'field', 'colName');
 ```
+### on `function`
+accepting array or string of parts and callback which will be called when all parts will be loaded.
+
+```javasript
+mongo.on('user post', function(){
+	console.log('user and post part has been loaded');
+});
+```
 ### beArr `function`
 checking value if it's array then we keep it and in other case, we replace it with new array. Example where each doc will have data as array:
 ```javasript
