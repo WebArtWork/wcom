@@ -3,10 +3,10 @@ angular.module("wcom_directives", [])
 	"ngInject";
 	return{
 		restrict: 'E', scope: true, replace: true,
-		controller: function($scope, img, $timeout, fm){
+		controller: function($scope, img, $timeout, file){
 			var inputs = $scope.inputs = [];
-			fm.addDelay = function(opts, cb){
-				if(typeof cb != 'function' || !opts._id) return;
+			file.addDelay = function(opts, cb){
+				if(typeof cb != 'function' || !opts.id) return;
 				opts.multiple = !!opts.multiple;
 				inputs.push(opts);
 				$timeout(function(){
@@ -22,7 +22,7 @@ angular.module("wcom_directives", [])
 								});
 							});
 						}
-						angular.element(document.getElementById(opts._id))
+						angular.element(document.getElementById(opts.id))
 						.bind('change', function(evt) {
 							var target = evt.currentTarget || evt.target;
 							for (var i = 0; i < target.files.length; i++) {
@@ -30,7 +30,7 @@ angular.module("wcom_directives", [])
 							}
 						});
 					}else{
-						angular.element(document.getElementById(opts._id))
+						angular.element(document.getElementById(opts.id))
 						.bind('change', function(evt) {
 							var target = evt.currentTarget || evt.target;
 							img.resizeUpTo({
@@ -47,7 +47,7 @@ angular.module("wcom_directives", [])
 				}, 250);
 			}
 		},
-		template: '<input ng-repeat="i in inputs" type="file" ng-hide="true" id="{{i._id}}" multiple="{{i.multiple}}">'
+		template: '<input ng-repeat="i in inputs" type="file" ng-hide="true" id="{{i.id}}" multiple="{{i.multiple}}">'
 	}
 }).directive('elsize', function($timeout, $window){
 	"ngInject";

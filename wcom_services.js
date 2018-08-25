@@ -7,7 +7,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 	var loc = window.location.host;
 	var socket = io.connect(loc);
 	return socket;
-}).service('fm', function($timeout){
+}).service('file', function($timeout){
 	"ngInject";
 	var self = this;
 	self.add = function(opts, cb){

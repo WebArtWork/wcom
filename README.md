@@ -163,9 +163,62 @@ mongo.get('colName', {
 ```
 ## SD Service
 ## Modal Service
+The basic service for adding and closing modals. Example where we opening modal from file:
+```javascript
+modal.open({
+	templateUrl: '/html/modal/file.html',
+	name: 'John'
+});
+```
+Example where we opening modal from HTML code:
+```javasript
+modal.open({
+	template: '<div>{{name}}</div>',
+	name: 'John'
+});
+```
+Example how to use the object we are passing:
+```html
+<div>{{name}}</div>
+```
+Example where we closing modal inside modal html cope:
+```html
+<button ng-click="close();">Cancel</button>
+```
+
 ## Popup Service
 ## Spinner Service
+service for adding and closing spinners. Example where we creating spinner:
+```javasript
+spinner.open({
+	name: 'John'
+});
+
+```
+Example where we closing spinner:
+```javascript
+spinner.close();
+```
 ## File Service
+service can do three functions. Such as, take files from User, load dataUrl of images, and upload file to server. 
+Example where we taking image, loading its dataUrl and uploading to server:
+```javascript
+file.add({
+	id:'idForLabel',
+	width: 500,
+	height: 500
+}, function(dataUrl) {
+	console.log('DataUrl length:', dataUrl.length);
+});
+```
+Example where we taking any file:
+```javascript
+file.add({
+	id:'idForLabel'
+}, function(file) {
+	console.log(file);
+});
+```
 ## Socket Service
 ## Image Service
 ## Hash Service

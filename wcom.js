@@ -1,6 +1,9 @@
-angular.module("wcom", ["wmodal_spinner.html", "wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_spinner", "wcom_services", "wcom_sd", "wcom_popup", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives"]);
+angular.module("wcom", ["wmodal_spinner.html", "wmodal_popup.html", "wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_spinner", "wcom_services", "wcom_sd", "wcom_popup", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives"]);
 angular.module("wmodal_spinner.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wmodal_spinner.html", "<!-- Comments are just to fix whitespace with inline-block --><div class=\"Spinner\"><!--    --><div class=\"Spinner-line Spinner-line--1\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--2\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--3\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--4\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!----></div><!--/spinner -->");
+}]);
+angular.module("wmodal_popup.html", []).run(["$templateCache", function($templateCache) {
+	$templateCache.put("wmodal_popup.html", "<div>Hello!<span ng-transclude=\"view\" ng-click=\"popup($popup)\"></span><span ng-transclude=\"pop\"></span></div>");
 }]);
 angular.module("wmodal_modal.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wmodal_modal.html", "<div class='modal' ng-class=\"{full: full, cover: cover}\"><div class='modal_fade' ng-click='close();' title='Close'></div><div class='modal_content viewer'><i class='icon icon-close close-m' ng-click='close();' title='Close'></i><h2 ng-if=\"header\">{{header}}</h2><p ng-if=\"content\">{{content}}</p><ng-transclude></ng-transclude></div></div>");
@@ -25,7 +28,6 @@ angular.module("wcom_spinner", [])
         this.close = function(id) {
             for (var i = 0; i < self.spinners.length; i++) {
                 if (self.spinners[i].id == id) {
-                    console.log(self.spinners[i]);
                     self.spinners[i].el.remove();
                     self.spinners.splice(i, 1);
                     break;
@@ -33,25 +35,30 @@ angular.module("wcom_spinner", [])
             }
 
         }
-        this.add = function(obj) {
+        this.open = function(obj) {
             if (!obj) obj = {};
             if (!obj.id) obj.id = Date.now();
-            var modal = '<spinner id="' + obj.id + '">';
+            var modal = '<spinner  id="' + obj.id + '">';
             if (obj.template) modal += obj.template;
             else if (obj.templateUrl) {
                 modal += '<ng-include src="';
                 modal += "'" + obj.templateUrl + "'";
                 modal += '"></ng-include>';
             } else {
-                modal += '<ng-include src="';
+                modal += '<ng-include  src="';
                 modal += "'wmodal_spinner.html'";
                 modal += '"></ng-include>';
             }
             modal += '</spinner>';
             this.spinners.push(obj);
-            var body = angular.element(document).find('body').eq(0);
-            body.append($compile(angular.element(modal))($rootScope));
-            angular.element(document).find('html').addClass('noscroll');
+            if (obj.element) {
+            	
+            	console.log(obj.element);
+            } else {
+            	var body = angular.element(document).find('body').eq(0);
+				body.append($compile(angular.element(modal))($rootScope));
+				angular.element(document).find('html').addClass('noscroll');
+            }
             return obj.id;
         }
     }).directive('spinner', function(spinner) {
@@ -81,7 +88,7 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 	var loc = window.location.host;
 	var socket = io.connect(loc);
 	return socket;
-}).service('fm', function($timeout){
+}).service('file', function($timeout){
 	"ngInject";
 	var self = this;
 	self.add = function(opts, cb){
@@ -284,63 +291,52 @@ angular.module("wcom_services", []).run(function($rootScope, $compile){
 angular.module("wcom_sd", [])
 
 angular.module("wcom_popup", [])
-.service('popup', function($compile, $rootScope){
-	"ngInject";
-	/*
-	*	Popups
-	*/
-	var self = this;
-	this.popups = [];
-	this.popup_link = function(scope, el){
-		scope.close = function(){
-			for (var i = 0; i < this.popups.length; i++) {
-				if(this.popups[i].id==scope.id){
-					this.popups.splice(i, 1);
-					break;
-				}
-			}
-			if(this.popups.length == 0){
-				angular.element(document).find('html').removeClass('noscroll');
-			}
-			if(scope.cb) scope.cb();
-			el.remove();
-		}
-		for (var i = 0; i < this.popups.length; i++) {
-			if(this.popups[i].id==scope.id){
-				this.popups[i].close = scope.close;
-				scope._data = this.popups[i];
-				for(var key in this.popups[i]){
-					scope[key] = this.popups[i][key];
-				}
-				break;
-			}
-		}
-	}
-	this.popup = function(obj){
-		if(!obj.id) obj.id = Date.now();
-		var modal = '<popup id="'+obj.id+'">';
-		if(obj.template) modal += obj.template;
-		else if(obj.templateUrl){
-			modal += '<ng-include src="';
-			modal += "'"+obj.templateUrl+"'";
-			modal += '" ng-controller="wparent"></ng-include>';
-		}
-		modal += '</popup>';
-		self.modals.push(obj);
-		var body = angular.element(document).find('body').eq(0);
-		body.append($compile(angular.element(modal))($rootScope));
-		angular.element(document).find('html').addClass('noscroll');
-	}
-}).directive('popup', function(modal) {
-	"ngInject";
-	return {
-		restrict: 'E',
-		transclude: true,
-		scope: {
-			id: '@'
-		}, link: modal.popup_link, templateUrl: 'wmodal_popup.html'
-	};
-});
+    .service('popup', function($compile, $rootScope) {
+        "ngInject";
+        /*
+         *	Popups
+         */
+        var self = this;
+        this.popups = [];
+        this.close = function(id) {
+            for (var i = 0; i < self.popups.length; i++) {
+                if (self.popups[i].id == id) {
+                    self.popups[i].el.remove();
+                    self.popups.splice(i, 1);
+                    break;
+                }
+            }
+
+        }
+        this.add = function(obj) {
+            if (!obj) obj = {};
+            if (!obj.id) obj.id = Date.now();
+            this.modals.push(obj);
+            var body = angular.element(document).find('body').eq(0);
+            body.append($compile(angular.element(modal))($rootScope));
+            angular.element(document).find('html').addClass('noscroll');
+        }
+    }).directive('popup', function(popup) {
+        "ngInject";
+        return {
+            restrict: 'E',
+            transclude: {
+                'view': 'view',
+                'pop': 'pop',
+            },
+            scope: {
+                id: '@'
+            },
+            link: function(scope, el) {
+                for (var i = 0; i < popup.popups.length; i++) {
+                    if (popup.popups[i].id == scope.id) {
+                        popup.popups[i].el = el;
+                    }
+                }
+            },
+            templateUrl: 'wmodal_popup.html'
+        };
+    });
 angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, socket){
 	/*
     *    Data will be storage for all information we are pulling from waw crud.
@@ -628,7 +624,9 @@ angular.module("wcom_modal", [])
 				}
 			}
 		}
-		this.add = function(obj){
+		this.open = function(obj){
+			if(!obj || (!obj.templateUrl && !obj.template)) 
+				return console.warn('Please add templateUrl or template'); 
 			if(!obj.id) obj.id = Date.now();
 			var modal = '<modal id="'+obj.id+'">';
 			if(obj.template) modal += obj.template;
@@ -762,10 +760,10 @@ angular.module("wcom_directives", [])
 	"ngInject";
 	return{
 		restrict: 'E', scope: true, replace: true,
-		controller: function($scope, img, $timeout, fm){
+		controller: function($scope, img, $timeout, file){
 			var inputs = $scope.inputs = [];
-			fm.addDelay = function(opts, cb){
-				if(typeof cb != 'function' || !opts._id) return;
+			file.addDelay = function(opts, cb){
+				if(typeof cb != 'function' || !opts.id) return;
 				opts.multiple = !!opts.multiple;
 				inputs.push(opts);
 				$timeout(function(){
@@ -781,7 +779,7 @@ angular.module("wcom_directives", [])
 								});
 							});
 						}
-						angular.element(document.getElementById(opts._id))
+						angular.element(document.getElementById(opts.id))
 						.bind('change', function(evt) {
 							var target = evt.currentTarget || evt.target;
 							for (var i = 0; i < target.files.length; i++) {
@@ -789,7 +787,7 @@ angular.module("wcom_directives", [])
 							}
 						});
 					}else{
-						angular.element(document.getElementById(opts._id))
+						angular.element(document.getElementById(opts.id))
 						.bind('change', function(evt) {
 							var target = evt.currentTarget || evt.target;
 							img.resizeUpTo({
@@ -806,7 +804,7 @@ angular.module("wcom_directives", [])
 				}, 250);
 			}
 		},
-		template: '<input ng-repeat="i in inputs" type="file" ng-hide="true" id="{{i._id}}" multiple="{{i.multiple}}">'
+		template: '<input ng-repeat="i in inputs" type="file" ng-hide="true" id="{{i.id}}" multiple="{{i.multiple}}">'
 	}
 }).directive('elsize', function($timeout, $window){
 	"ngInject";
