@@ -3,7 +3,7 @@ angular.module("wmodal_spinner.html", []).run(["$templateCache", function($templ
 	$templateCache.put("wmodal_spinner.html", "<!-- Comments are just to fix whitespace with inline-block --><div class=\"Spinner\"><!--    --><div class=\"Spinner-line Spinner-line--1\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--2\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--3\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--4\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!----></div><!--/spinner -->");
 }]);
 angular.module("wmodal_popup.html", []).run(["$templateCache", function($templateCache) {
-	$templateCache.put("wmodal_popup.html", "<div>Hello!<span ng-transclude=\"view\" ng-click=\"popup($popup)\"></span><span ng-transclude=\"pop\"></span></div>");
+	$templateCache.put("wmodal_popup.html", "<div><span ng-transclude=\"view\" elsize=\"size\"></span><span ng-transclude=\"pop\" ng-click=\"popup($event, size)\"></span></div>");
 }]);
 angular.module("wmodal_modal.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wmodal_modal.html", "<div class='modal' ng-class=\"{full: full, cover: cover}\"><div class='modal_fade' ng-click='close();' title='Close'></div><div class='modal_content viewer'><i class='icon icon-close close-m' ng-click='close();' title='Close'></i><h2 ng-if=\"header\">{{header}}</h2><p ng-if=\"content\">{{content}}</p><ng-transclude></ng-transclude></div></div>");
@@ -18,7 +18,7 @@ angular.module("wcom_wmodaerators.html", []).run(["$templateCache", function($te
 	$templateCache.put("wcom_wmodaerators.html", "<label class=\"wtags\"><span class='wtag' ng-repeat='obj in arr'><img ng-src='{{obj.avatarUrl}}' alt='{{obj.name}}'><span>{{obj.name}}</span><i class='icon icon-close' ng-click='arr.splice($index, 1); change();'></i></span><input type='text' placeholder='{{holder}}' ng-model='object.new_moderator'></label><div ng-if='object.new_moderator'><div ng-repeat='user in users|rArr:arr|filter:object.new_moderator' ng-click='arr.push(user); object.new_moderator=null; change();'><img ng-src='{{user.avatarUrl}}' alt='{{user.name}}'><span>{{user.name}}</span></div></div>");
 }]);
 angular.module("wcom_spinner", [])
-    .service('spinner', function($compile, $rootScope) {
+    .service('spin', function($compile, $rootScope) {
         "ngInject";
         /*
          *	Spinners
@@ -38,7 +38,7 @@ angular.module("wcom_spinner", [])
         this.open = function(obj) {
             if (!obj) obj = {};
             if (!obj.id) obj.id = Date.now();
-            var modal = '<spinner  id="' + obj.id + '">';
+            var modal = '<spin  id="' + obj.id + '">';
             if (obj.template) modal += obj.template;
             else if (obj.templateUrl) {
                 modal += '<ng-include src="';
@@ -49,7 +49,7 @@ angular.module("wcom_spinner", [])
                 modal += "'wmodal_spinner.html'";
                 modal += '"></ng-include>';
             }
-            modal += '</spinner>';
+            modal += '</spin>';
             this.spinners.push(obj);
             if (obj.element) {
             	
@@ -61,7 +61,7 @@ angular.module("wcom_spinner", [])
             }
             return obj.id;
         }
-    }).directive('spinner', function(spinner) {
+    }).directive('spin', function(spin) {
         "ngInject";
         return {
             restrict: 'E',
@@ -292,51 +292,122 @@ angular.module("wcom_sd", [])
 
 angular.module("wcom_popup", [])
     .service('popup', function($compile, $rootScope) {
-        "ngInject";
-        /*
-         *	Popups
-         */
-        var self = this;
-        this.popups = [];
-        this.close = function(id) {
-            for (var i = 0; i < self.popups.length; i++) {
-                if (self.popups[i].id == id) {
-                    self.popups[i].el.remove();
-                    self.popups.splice(i, 1);
-                    break;
+            "ngInject";
+            this.open = function(event, size, $scope) {
+                console.log('jkytj');
+                var self = this;
+                switch (size) {
+                    case 'rt':
+                        size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+                        size.top = event.clientY - event.offsetY - (event.target.offsetHeight * 2);
+                        break;
+                    case 'r':
+                        size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+                        size.top = event.clientY - event.offsetY - (event.target.offsetHeight / 2);
+                        break;
+                    case 'rb':
+                        size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+                        size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+                        break;
+                    case 'b':
+                        size.left = event.clientX - event.offsetX + (event.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
+                        size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+                        break;
+                    case 'lb':
+                        size.left = event.clientX - event.offsetX - size.offsetWidth;
+                        size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+                        break;
+                    case 'l':
+                        size.left = event.clientX - event.offsetX - size.offsetWidth;
+                        size.top = event.clientY - event.offsetY - (event.target.offsetHeight / 2);
+                        break;
+                    case 'lt':
+                        size.left = event.clientX - event.offsetX - size.offsetWidth;
+                        size.top = event.clientY - event.offsetY - (event.target.offsetHeight * 2);
+                        break;
+                    case 't':
+                        size.left = event.clientX - event.offsetX + (event.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
+                        size.top = event.clientY - event.offsetY - size.offsetHeight;
+                        break;
+                    default:
+                        return self.default(event, size);
                 }
             }
 
-        }
-        this.add = function(obj) {
-            if (!obj) obj = {};
-            if (!obj.id) obj.id = Date.now();
-            this.modals.push(obj);
+            this.default = function(event, size) {
+
+                var top = event.clientY - event.offsetY > size.offsetHeight;
+
+                var left = event.clientX - event.offsetX > size.offsetWidth;
+
+                var botton = document.documentElement.clientHeight - ((event.clientX - event.offsetX) + size.offsetHeight) > size.offsetHeight;
+
+                var right = document.documentElement.clientWidth - ((event.clientX - event.offsetX) + size.offsetWidth) > size.offsetWidth;
+
+
+
+                console.log(top);
+                console.log(left);
+                console.log(bottom);
+                console.log(right);
+
+
+                if (left && top) {
+                    $scope.size = 'lt';
+                } else if (right && top) {
+                    $scope.size = 'rt';
+                } else if (right && bottom) {
+                    $scope.size = 'rb';
+                } else if (left && bottom) {
+                    $scope.size = 'lb';
+                } else if (top) {
+                    $scope.size = 't';
+                } else if (right) {
+                    $scope.size = 'r';
+                } else if (botton) {
+                    $scope.size = 'b';
+                } else if (left) {
+                    $scope.size = 'l';
+                } else $scope.size = 'b';
+                self.open(event);
+            }
+    }).directive('popup', function(popup) {
+    "ngInject";
+    return {
+        restrict: 'E',
+        transclude: {
+            'view': 'view',
+            'pop': 'pop',
+        },
+        scope: {
+            id: '@'
+        },
+        link: function($scope) {
+            $scope.size = {
+                top: -5000,
+                left: -5000
+            };
+            $scope.open = function(event, size) {
+                console.log('hello');
+                if (!$scope.size || !$scope.size.offsetWidth) {
+                    return setTimeout(function() {
+                        popup.open(event, $scope.size);
+                    }, 50);
+                }
+            }
+        },
+        templateUrl: 'wmodal_popup.html'
+    };
+}).directive('side', function(popup) {
+    "ngInject";
+    return {
+        link: function($scope) {
             var body = angular.element(document).find('body').eq(0);
             body.append($compile(angular.element(modal))($rootScope));
             angular.element(document).find('html').addClass('noscroll');
         }
-    }).directive('popup', function(popup) {
-        "ngInject";
-        return {
-            restrict: 'E',
-            transclude: {
-                'view': 'view',
-                'pop': 'pop',
-            },
-            scope: {
-                id: '@'
-            },
-            link: function(scope, el) {
-                for (var i = 0; i < popup.popups.length; i++) {
-                    if (popup.popups[i].id == scope.id) {
-                        popup.popups[i].el = el;
-                    }
-                }
-            },
-            templateUrl: 'wmodal_popup.html'
-        };
-    });
+    }
+})
 angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, socket){
 	/*
     *    Data will be storage for all information we are pulling from waw crud.
@@ -487,7 +558,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			return docs;
 		}
 		this.afterWhile = function(doc, cb, time) {
-			if (cb && typeof time == 'number') {
+			if (typeof cb == 'function' && typeof doc == 'object') {
 				$timeout.cancel(doc.updateTimeout);
 				doc.updateTimeout = $timeout(cb, time || 1000);
 			}
@@ -564,25 +635,32 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 	/*
 	*	mongo local support functions
 	*/
-		var replace = function(doc, value, rpl) {
+		var docIndex = function(part, _id) {
+			for (i = 0; i < data['arr'+ part].length; i++) {
+				if(data['arr' + part][i]._id == _id) {
+					return i;
+				}
+			}
+		}
+		var replace = function(doc, value, rpl, part) {
 			if (value.indexOf('.') > -1) {
 				value = value.split('.');
 				var sub = value.shift();
 				if (doc[sub] && (typeof doc[sub] != 'object' || Array.isArray(doc[sub])))
 					return;
 				if (!doc[sub]) doc[sub] = {};
-				return replace(doc[sub], value.join('.'), rpl);
+				return replace(doc[sub], value.join('.'), rpl, part);
 			}
 			if (typeof rpl == 'function') {
 				rpl(doc[value], function(newValue) {
 					doc[value] = newValue;
-				}, doc);
+				}, doc, docIndex(part, doc._id));
 			}
 		};
 		var push = function(part, doc) {
 			if (data['opts' + part].replace) {
 				for (var key in data['opts' + part].replace) {
-					replace(doc, key, data['opts' + part].replace[key]);
+					replace(doc, key, data['opts' + part].replace[key], part);
 				}
 			}
 			if(data['opts'+part].populate){

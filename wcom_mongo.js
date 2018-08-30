@@ -148,7 +148,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			return docs;
 		}
 		this.afterWhile = function(doc, cb, time) {
-			if (cb && typeof time == 'number') {
+			if (typeof cb == 'function' && typeof doc == 'object') {
 				$timeout.cancel(doc.updateTimeout);
 				doc.updateTimeout = $timeout(cb, time || 1000);
 			}
@@ -225,25 +225,32 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 	/*
 	*	mongo local support functions
 	*/
-		var replace = function(doc, value, rpl) {
+		var docIndex = function(part, _id) {
+			for (i = 0; i < data['arr'+ part].length; i++) {
+				if(data['arr' + part][i]._id == _id) {
+					return i;
+				}
+			}
+		}
+		var replace = function(doc, value, rpl, part) {
 			if (value.indexOf('.') > -1) {
 				value = value.split('.');
 				var sub = value.shift();
 				if (doc[sub] && (typeof doc[sub] != 'object' || Array.isArray(doc[sub])))
 					return;
 				if (!doc[sub]) doc[sub] = {};
-				return replace(doc[sub], value.join('.'), rpl);
+				return replace(doc[sub], value.join('.'), rpl, part);
 			}
 			if (typeof rpl == 'function') {
 				rpl(doc[value], function(newValue) {
 					doc[value] = newValue;
-				}, doc);
+				}, doc, docIndex(part, doc._id));
 			}
 		};
 		var push = function(part, doc) {
 			if (data['opts' + part].replace) {
 				for (var key in data['opts' + part].replace) {
-					replace(doc, key, data['opts' + part].replace[key]);
+					replace(doc, key, data['opts' + part].replace[key], part);
 				}
 			}
 			if(data['opts'+part].populate){

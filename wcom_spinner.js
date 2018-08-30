@@ -1,5 +1,5 @@
 angular.module("wcom_spinner", [])
-    .service('spinner', function($compile, $rootScope) {
+    .service('spin', function($compile, $rootScope) {
         "ngInject";
         /*
          *	Spinners
@@ -19,7 +19,7 @@ angular.module("wcom_spinner", [])
         this.open = function(obj) {
             if (!obj) obj = {};
             if (!obj.id) obj.id = Date.now();
-            var modal = '<spinner  id="' + obj.id + '">';
+            var modal = '<spin  id="' + obj.id + '">';
             if (obj.template) modal += obj.template;
             else if (obj.templateUrl) {
                 modal += '<ng-include src="';
@@ -30,7 +30,7 @@ angular.module("wcom_spinner", [])
                 modal += "'wmodal_spinner.html'";
                 modal += '"></ng-include>';
             }
-            modal += '</spinner>';
+            modal += '</spin>';
             this.spinners.push(obj);
             if (obj.element) {
             	
@@ -42,7 +42,7 @@ angular.module("wcom_spinner", [])
             }
             return obj.id;
         }
-    }).directive('spinner', function(spinner) {
+    }).directive('spin', function(spin) {
         "ngInject";
         return {
             restrict: 'E',

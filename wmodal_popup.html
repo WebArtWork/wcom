@@ -1,5 +1,4 @@
 <div>
-	Hello!
-	<span ng-transclude="view" ng-click="popup($popup)"></span>
-	<span ng-transclude="pop"></span>
+	<span ng-transclude="view" elsize="size"></span>
+	<span ng-transclude="pop" ng-click="popup($event, size)"></span>
 </div>
