@@ -55,8 +55,8 @@
 
                             // now we have done the initial checks, start gathering id's and classes
                             id = element.id,
-                            classNames = element.className,
-                            l = classList.length;
+                                classNames = element.className,
+                                l = classList.length;
 
                             // Unwrap SVGAnimatedString classes
                             if (classNames && classNames.baseVal !== undefined) {
@@ -83,14 +83,16 @@
                         // if we have got this far, then we are good to go with processing the command passed in via the click-outside attribute
                         $timeout(function() {
                             fn = $parse(attr['clickOutside']);
-                            fn($scope, { event: e });
+                            fn($scope, {
+                                event: e
+                            });
                         });
                     }
 
                     // if the devices has a touchscreen, listen for this event
                     if (_hasTouch()) {
-                        $document.on('touchstart', function () {
-                          setTimeout(eventHandler)
+                        $document.on('touchstart', function() {
+                            setTimeout(eventHandler)
                         });
                     }
 

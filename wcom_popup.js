@@ -3,24 +3,19 @@ angular.module("wcom_popup", [])
         "ngInject"; 
         var self = this;
         this.open = function(size, config) {     
-            console.log(config);
-            console.log(size);
             if (!config || (!config.templateUrl && !config.template))
                 return console.warn('Please add templateUrl or template');
-            if (!config) config = Date.now();
-            var popup = '<popup config="' + config + '">'; 
+            var popup = '<popup style="position: fixed;" config="' + (JSON.stringify(config)).split('"').join("'") + '">';
             if (config.template) popup += config.template;
             else if (config.templateUrl) {
                 popup += '<ng-include src="';
                 popup += "'" + config.templateUrl + "'";
-                popup += '" ng-controller="wparent"></ng-include>';
+                popup += '"></ng-include>';
             }
             popup += '</popup>';
-            popup.push(size, config);
             var body = angular.element(document).find('body').eq(0);
-            body.append($compile(angular.element(modal))($rootScope));
-            angular.element(document).find('html').addClass('noscroll');
-           
+                body.append($compile(angular.element(popup))($rootScope));
+                angular.element(document).find('html').addClass('noscroll');
         }
     }).directive('pop', function(popup) {
         "ngInject";
@@ -38,7 +33,6 @@ angular.module("wcom_popup", [])
                 $scope.open = function() {
                     //Add to scope.size span element left, top from event
                     popup.open($scope.size, $scope.config);
-                    
                 }
             },
             templateUrl: 'wmodal_popup.html'
@@ -46,8 +40,11 @@ angular.module("wcom_popup", [])
     }).directive('popup', function(popup) {
         "ngInject";
         return {
-            link: function(config, size) {
-                console.log('something');
+            scope: {
+                config: '='
+            },
+            link: function($scope) {
+            console.log($scope);
                 /*switch (size) {
                     case 'rt':
                         size.left = config.clientX - config.offsetX + config.target.offsetWidth;
@@ -123,5 +120,5 @@ angular.module("wcom_popup", [])
                     self.open(event, size, config);
                 }*/
             }
-        }
+        };
     });
