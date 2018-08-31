@@ -1,9 +1,9 @@
-angular.module("wcom", ["wmodal_spinner.html", "wmodal_popup.html", "wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_spinner", "wcom_services", "wcom_sd", "wcom_popup", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives"]);
+angular.module("wcom", ["wmodal_spinner.html", "wmodal_popup.html", "wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_spinner", "wcom_services", "wcom_sd", "wcom_popup", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives", "angular-click-outside"]);
 angular.module("wmodal_spinner.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wmodal_spinner.html", "<!-- Comments are just to fix whitespace with inline-block --><div class=\"Spinner\"><!--    --><div class=\"Spinner-line Spinner-line--1\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--2\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--3\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--4\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!----></div><!--/spinner -->");
 }]);
 angular.module("wmodal_popup.html", []).run(["$templateCache", function($templateCache) {
-	$templateCache.put("wmodal_popup.html", "<div><span ng-transclude=\"view\" elsize=\"size\"></span><span ng-transclude=\"pop\" ng-click=\"popup($event, size)\"></span></div>");
+	$templateCache.put("wmodal_popup.html", "<span ng-transclude ng-click=\"open()\" elsize=\"size\"></span>");
 }]);
 angular.module("wmodal_modal.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wmodal_modal.html", "<div class='modal' ng-class=\"{full: full, cover: cover}\"><div class='modal_fade' ng-click='close();' title='Close'></div><div class='modal_content viewer'><i class='icon icon-close close-m' ng-click='close();' title='Close'></i><h2 ng-if=\"header\">{{header}}</h2><p ng-if=\"content\">{{content}}</p><ng-transclude></ng-transclude></div></div>");
@@ -292,122 +292,131 @@ angular.module("wcom_sd", [])
 
 angular.module("wcom_popup", [])
     .service('popup', function($compile, $rootScope) {
-            "ngInject";
-            this.open = function(event, size, $scope) {
-                console.log('jkytj');
-                var self = this;
-                switch (size) {
-                    case 'rt':
-                        size.left = event.clientX - event.offsetX + event.target.offsetWidth;
-                        size.top = event.clientY - event.offsetY - (event.target.offsetHeight * 2);
-                        break;
-                    case 'r':
-                        size.left = event.clientX - event.offsetX + event.target.offsetWidth;
-                        size.top = event.clientY - event.offsetY - (event.target.offsetHeight / 2);
-                        break;
-                    case 'rb':
-                        size.left = event.clientX - event.offsetX + event.target.offsetWidth;
-                        size.top = event.clientY - event.offsetY + event.target.offsetHeight;
-                        break;
-                    case 'b':
-                        size.left = event.clientX - event.offsetX + (event.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
-                        size.top = event.clientY - event.offsetY + event.target.offsetHeight;
-                        break;
-                    case 'lb':
-                        size.left = event.clientX - event.offsetX - size.offsetWidth;
-                        size.top = event.clientY - event.offsetY + event.target.offsetHeight;
-                        break;
-                    case 'l':
-                        size.left = event.clientX - event.offsetX - size.offsetWidth;
-                        size.top = event.clientY - event.offsetY - (event.target.offsetHeight / 2);
-                        break;
-                    case 'lt':
-                        size.left = event.clientX - event.offsetX - size.offsetWidth;
-                        size.top = event.clientY - event.offsetY - (event.target.offsetHeight * 2);
-                        break;
-                    case 't':
-                        size.left = event.clientX - event.offsetX + (event.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
-                        size.top = event.clientY - event.offsetY - size.offsetHeight;
-                        break;
-                    default:
-                        return self.default(event, size);
-                }
+        "ngInject"; 
+        var self = this;
+        this.open = function(size, config) {     
+            console.log(config);
+            console.log(size);
+            if (!config || (!config.templateUrl && !config.template))
+                return console.warn('Please add templateUrl or template');
+            if (!config) config = Date.now();
+            var popup = '<popup config="' + config + '">'; 
+            if (config.template) popup += config.template;
+            else if (config.templateUrl) {
+                popup += '<ng-include src="';
+                popup += "'" + config.templateUrl + "'";
+                popup += '" ng-controller="wparent"></ng-include>';
             }
-
-            this.default = function(event, size) {
-
-                var top = event.clientY - event.offsetY > size.offsetHeight;
-
-                var left = event.clientX - event.offsetX > size.offsetWidth;
-
-                var botton = document.documentElement.clientHeight - ((event.clientX - event.offsetX) + size.offsetHeight) > size.offsetHeight;
-
-                var right = document.documentElement.clientWidth - ((event.clientX - event.offsetX) + size.offsetWidth) > size.offsetWidth;
-
-
-
-                console.log(top);
-                console.log(left);
-                console.log(bottom);
-                console.log(right);
-
-
-                if (left && top) {
-                    $scope.size = 'lt';
-                } else if (right && top) {
-                    $scope.size = 'rt';
-                } else if (right && bottom) {
-                    $scope.size = 'rb';
-                } else if (left && bottom) {
-                    $scope.size = 'lb';
-                } else if (top) {
-                    $scope.size = 't';
-                } else if (right) {
-                    $scope.size = 'r';
-                } else if (botton) {
-                    $scope.size = 'b';
-                } else if (left) {
-                    $scope.size = 'l';
-                } else $scope.size = 'b';
-                self.open(event);
-            }
-    }).directive('popup', function(popup) {
-    "ngInject";
-    return {
-        restrict: 'E',
-        transclude: {
-            'view': 'view',
-            'pop': 'pop',
-        },
-        scope: {
-            id: '@'
-        },
-        link: function($scope) {
-            $scope.size = {
-                top: -5000,
-                left: -5000
-            };
-            $scope.open = function(event, size) {
-                console.log('hello');
-                if (!$scope.size || !$scope.size.offsetWidth) {
-                    return setTimeout(function() {
-                        popup.open(event, $scope.size);
-                    }, 50);
-                }
-            }
-        },
-        templateUrl: 'wmodal_popup.html'
-    };
-}).directive('side', function(popup) {
-    "ngInject";
-    return {
-        link: function($scope) {
+            popup += '</popup>';
+            popup.push(size, config);
             var body = angular.element(document).find('body').eq(0);
             body.append($compile(angular.element(modal))($rootScope));
             angular.element(document).find('html').addClass('noscroll');
+           
         }
-    }
-})
+    }).directive('pop', function(popup) {
+        "ngInject";
+        return {
+            restrict: 'E',
+            transclude: true,
+            scope: {
+                config: '='
+            },  
+            link: function($scope) {
+                $scope.size = {
+                    top: -5000,
+                    left: -5000
+                };
+                $scope.open = function() {
+                    //Add to scope.size span element left, top from event
+                    popup.open($scope.size, $scope.config);
+                    
+                }
+            },
+            templateUrl: 'wmodal_popup.html'
+        };
+    }).directive('popup', function(popup) {
+        "ngInject";
+        return {
+            link: function(config, size) {
+                console.log('something');
+                /*switch (size) {
+                    case 'rt':
+                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
+                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight * 2);
+                        break;
+                    case 'r':
+                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
+                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight / 2);
+                        break;
+                    case 'rb':
+                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
+                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        break;
+                    case 'b':
+                        size.left = config.clientX - config.offsetX + (config.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
+                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        break;
+                    case 'lb':
+                        size.left = config.clientX - config.offsetX - size.offsetWidth;
+                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        break;
+                    case 'l':
+                        size.left = config.clientX - config.offsetX - size.offsetWidth;
+                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight / 2);
+                        break;
+                    case 'lt':
+                        size.left = config.clientX - config.offsetX - size.offsetWidth;
+                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight * 2);
+                        break;
+                    case 't':
+                        size.left = config.clientX - config.offsetX + (config.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
+                        size.top = config.clientY - config.offsetY - size.offsetHeight;
+                        break;
+                    default:
+                        return self.default(config, size);
+                }
+
+                this.default = function() {
+
+                    var top = config.clientY - config.offsetY > size.offsetHeight;
+
+                    var left = config.clientX - config.offsetX > size.offsetWidth;
+
+                    var bottom = document.documentElement.clientHeight - ((config.clientX - config.offsetX) + size.offsetHeight) > size.offsetHeight;
+
+                    var right = document.documentElement.clientWidth - ((config.clientX - config.offsetX) + size.offsetWidth) > size.offsetWidth;
+
+
+
+                    console.log(top);
+                    console.log(left);
+                    console.log(bottom);
+                    console.log(right);
+
+
+                    if (left && top) {
+                        size = 'lt';
+                    } else if (right && top) {
+                        size = 'rt';
+                    } else if (right && bottom) {
+                        size = 'rb';
+                    } else if (left && bottom) {
+                        size = 'lb';
+                    } else if (top) {
+                        size = 't';
+                    } else if (right) {
+                        size = 'r';
+                    } else if (bottom) {
+                        size = 'b';
+                    } else if (left) {
+                        size = 'l';
+                    } else size = 'b';
+                    self.open(event, size, config);
+                }*/
+            }
+        }
+    });
 angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, socket){
 	/*
     *    Data will be storage for all information we are pulling from waw crud.
@@ -965,3 +974,124 @@ angular.module("wcom_directives", [])
 		}, templateUrl: 'wcom_wmodaeratorsview.html'
 	}
 });
+/*global angular, navigator*/
+
+(function() {
+    'use strict';
+
+    angular
+        .module('angular-click-outside', [])
+        .directive('clickOutside', [
+            '$document', '$parse', '$timeout',
+            clickOutside
+        ]);
+
+    /**
+     * @ngdoc directive
+     * @name angular-click-outside.directive:clickOutside
+     * @description Directive to add click outside capabilities to DOM elements
+     * @requires $document
+     * @requires $parse
+     * @requires $timeout
+     **/
+    function clickOutside($document, $parse, $timeout) {
+        return {
+            restrict: 'A',
+            link: function($scope, elem, attr) {
+
+                // postpone linking to next digest to allow for unique id generation
+                $timeout(function() {
+                    var classList = (attr.outsideIfNot !== undefined) ? attr.outsideIfNot.split(/[ ,]+/) : [],
+                        fn;
+
+                    function eventHandler(e) {
+                        var i,
+                            element,
+                            r,
+                            id,
+                            classNames,
+                            l;
+
+                        // check if our element already hidden and abort if so
+                        if (angular.element(elem).hasClass("ng-hide")) {
+                            return;
+                        }
+
+                        // if there is no click target, no point going on
+                        if (!e || !e.target) {
+                            return;
+                        }
+
+                        // loop through the available elements, looking for classes in the class list that might match and so will eat
+                        for (element = e.target; element; element = element.parentNode) {
+                            // check if the element is the same element the directive is attached to and exit if so (props @CosticaPuntaru)
+                            if (element === elem[0]) {
+                                return;
+                            }
+
+                            // now we have done the initial checks, start gathering id's and classes
+                            id = element.id,
+                            classNames = element.className,
+                            l = classList.length;
+
+                            // Unwrap SVGAnimatedString classes
+                            if (classNames && classNames.baseVal !== undefined) {
+                                classNames = classNames.baseVal;
+                            }
+
+                            // if there are no class names on the element clicked, skip the check
+                            if (classNames || id) {
+
+                                // loop through the elements id's and classnames looking for exceptions
+                                for (i = 0; i < l; i++) {
+                                    //prepare regex for class word matching
+                                    r = new RegExp('\\b' + classList[i] + '\\b');
+
+                                    // check for exact matches on id's or classes, but only if they exist in the first place
+                                    if ((id !== undefined && r.test(id)) || (classNames && r.test(classNames))) {
+                                        // now let's exit out as it is an element that has been defined as being ignored for clicking outside
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+
+                        // if we have got this far, then we are good to go with processing the command passed in via the click-outside attribute
+                        $timeout(function() {
+                            fn = $parse(attr['clickOutside']);
+                            fn($scope, { event: e });
+                        });
+                    }
+
+                    // if the devices has a touchscreen, listen for this event
+                    if (_hasTouch()) {
+                        $document.on('touchstart', function () {
+                          setTimeout(eventHandler)
+                        });
+                    }
+
+                    // still listen for the click event even if there is touch to cater for touchscreen laptops
+                    $document.on('click', eventHandler);
+
+                    // when the scope is destroyed, clean up the documents event handlers as we don't want it hanging around
+                    $scope.$on('$destroy', function() {
+                        if (_hasTouch()) {
+                            $document.off('touchstart', eventHandler);
+                        }
+
+                        $document.off('click', eventHandler);
+                    });
+
+                    /**
+                     * @description Private function to attempt to figure out if we are on a touch device
+                     * @private
+                     **/
+                    function _hasTouch() {
+                        // works on most browsers, IE10/11 and Surface
+                        return 'ontouchstart' in window || navigator.maxTouchPoints;
+                    };
+                });
+            }
+        };
+    }
+})();
