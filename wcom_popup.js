@@ -1,11 +1,12 @@
 angular.module("wcom_popup", [])
     .service('popup', function($compile, $rootScope) {
-        "ngInject"; 
+        "ngInject";
         var self = this;
-        this.open = function(size, config) {     
+        var event;
+        this.open = function(size, config, event) {
             if (!config || (!config.templateUrl && !config.template))
                 return console.warn('Please add templateUrl or template');
-            var popup = '<popup style="position: fixed;" config="' + (JSON.stringify(config)).split('"').join("'") + '">';
+            var popup = '<popup style="position: fixed;" config="' + (JSON.stringify(config)).split('"').join("'") + '"size="' + (JSON.stringify(size)).split('"').join("'") + '">';
             if (config.template) popup += config.template;
             else if (config.templateUrl) {
                 popup += '<ng-include src="';
@@ -14,8 +15,8 @@ angular.module("wcom_popup", [])
             }
             popup += '</popup>';
             var body = angular.element(document).find('body').eq(0);
-                body.append($compile(angular.element(popup))($rootScope));
-                angular.element(document).find('html').addClass('noscroll');
+            body.append($compile(angular.element(popup))($rootScope));
+            angular.element(document).find('html').addClass('noscroll');
         }
     }).directive('pop', function(popup) {
         "ngInject";
@@ -24,15 +25,16 @@ angular.module("wcom_popup", [])
             transclude: true,
             scope: {
                 config: '='
-            },  
+            },
             link: function($scope) {
                 $scope.size = {
-                    top: -5000,
-                    left: -5000
+                    top: 10,
+                    left: 370
                 };
-                $scope.open = function() {
+                $scope.open = function(event) {
                     //Add to scope.size span element left, top from event
-                    popup.open($scope.size, $scope.config);
+                    popup.open($scope.size, $scope.config, event);
+
                 }
             },
             templateUrl: 'wmodal_popup.html'
@@ -41,56 +43,66 @@ angular.module("wcom_popup", [])
         "ngInject";
         return {
             scope: {
-                config: '='
+                config: '=',
+                size: '='
             },
             link: function($scope) {
-            console.log($scope);
-                /*switch (size) {
+                switch ($scope.config.pos) {
                     case 'rt':
-                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
-                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight * 2);
+                        $scope.size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+                        $scope.size.top = event.clientY - event.offsetY - (event.target.offsetHeight * 2);
+                        console.log(event);
                         break;
                     case 'r':
-                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
-                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight / 2);
+                        $scope.size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+                        $scope.size.top = event.clientY - event.offsetY - (event.target.offsetHeight / 2);
+
                         break;
                     case 'rb':
-                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
-                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        $scope.size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+
+                        $scope.size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+
                         break;
                     case 'b':
-                        size.left = config.clientX - config.offsetX + (config.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
-                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        $scope.size.left = event.clientX - event.offsetX + (event.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
+                         $scope.size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+
                         break;
                     case 'lb':
-                        size.left = config.clientX - config.offsetX - size.offsetWidth;
-                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        $scope.size.left = event.clientX - event.offsetX - $scope.size.offsetWidth;
+                          $scope.size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+
                         break;
                     case 'l':
-                        size.left = config.clientX - config.offsetX - size.offsetWidth;
-                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight / 2);
+                        $scope.size.left = event.clientX - event.offsetX - $scope.size.offsetWidth;
+                         $scope.size.top = event.clientY - event.offsetY - (event.target.offsetHeight / 2);
+
                         break;
                     case 'lt':
-                        size.left = config.clientX - config.offsetX - size.offsetWidth;
-                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight * 2);
+                        $scope.size.left = event.clientX - event.offsetX - $scope.size.offsetWidth;
+                        $scope.size.top = event.clientY - event.offsetY - (event.target.offsetHeight * 2);
+
                         break;
                     case 't':
-                        size.left = config.clientX - config.offsetX + (config.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
-                        size.top = config.clientY - config.offsetY - size.offsetHeight;
+                        $scope.size.left = event.clientX - event.offsetX + (event.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
+                        $scope.size.top = event.clientY - event.offsetY - $scope.size.offsetHeight;
+
                         break;
                     default:
-                        return self.default(config, size);
+                        return self.default($scope);
                 }
+                return [$scope.size.left, $scope.size.top];
+            
+                this.default = function($scope) {
+                    console.log(event);
+                    var top = event.clientY - event.offsetY > $scope.size.offsetHeight;
 
-                this.default = function() {
+                    var left = event.clientX - event.offsetX > $scope.size.offsetWidth;
 
-                    var top = config.clientY - config.offsetY > size.offsetHeight;
+                    var bottom = document.documentElement.clientHeight - ((event.clientX - event.offsetX) + $scope.size.offsetHeight) > $scope.size.offsetHeight;
 
-                    var left = config.clientX - config.offsetX > size.offsetWidth;
-
-                    var bottom = document.documentElement.clientHeight - ((config.clientX - config.offsetX) + size.offsetHeight) > size.offsetHeight;
-
-                    var right = document.documentElement.clientWidth - ((config.clientX - config.offsetX) + size.offsetWidth) > size.offsetWidth;
+                    var right = document.documentElement.clientWidth - ((event.clientX - event.offsetX) + $scope.size.offsetWidth) > $scope.size.offsetWidth;
 
 
 
@@ -101,24 +113,24 @@ angular.module("wcom_popup", [])
 
 
                     if (left && top) {
-                        size = 'lt';
+                        $scope.config.pos = 'lt';
                     } else if (right && top) {
-                        size = 'rt';
+                        $scope.config.pos = 'rt';
                     } else if (right && bottom) {
-                        size = 'rb';
+                        $scope.config.pos = 'rb';
                     } else if (left && bottom) {
-                        size = 'lb';
+                        $scope.config.pos = 'lb';
                     } else if (top) {
-                        size = 't';
+                        $scope.config.pos = 't';
                     } else if (right) {
-                        size = 'r';
+                        $scope.config.pos = 'r';
                     } else if (bottom) {
-                        size = 'b';
+                        $scope.config.pos = 'b';
                     } else if (left) {
-                        size = 'l';
-                    } else size = 'b';
-                    self.open(event, size, config);
-                }*/
+                        $scope.config.pos = 'l';
+                    } else $scope.config.pos = 'b';
+                    self.open($scope.size, $scope.config, event);
+                }
             }
         };
-    });
+});

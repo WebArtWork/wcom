@@ -43,16 +43,81 @@ mongo.create('colName', {
 ### read `function`
 connecting with waw CRUD read. As parameters accepting name of mongo collection, optionally options, optionally callback which will return all documents in array as first parameter and in object with doc._id placeholder for doc as second parameter. Function returning directing array which will host the documents. Example:
 ```javascript
-mongo.get('colName', {
+mongo.get('colName',{
 	replace: {
-	    name: function(val ,cb, doc) {
-		    cb(val + '_modified')
-	    }
+		name: function(val, cb, doc){
+			cb(val+'_modified')
+		}
+	},
+	name: 'me',
+	next: {
+		name: 'friends',
+		next: {
+			name: 'near',
+			next: {
+				name: 'city',
+				next: {
+					name: 'country'
+				}
+			}
+		}
+	},
+	populate: [{
+		field: 'author',
+		part: 'user'
+	}],
+	groups: 'city name' || ['city', 'name'] || {
+		first_name: {
+			field: function(doc, cb){
+				if(doc.name.split(' ').length>1) cb(doc.name.split(' ')[1]);
+				retun doc.name.split(' ')[0];
+			},
+			allow: function(doc){
+				return !!doc.name;
+			},
+			ignore: function(){
+				return false;
+			},
+			sort: function(){
+
+			}
+		}
+	},
+	query: {
+		male: function(doc){
+			return doc.gender;
+		},
+		female: {
+			allow: function(doc){
+				return !doc.gender;
+			},
+			ignore: function(){
+				return typeof doc.gender != 'boolean';
+			},
+			sort: function(a, b){
+				if(a.order > b.order) return -1;
+				return 1;
+			}
+		}
 	}
-}, function() {
-	console.log('documents is loaded and field name is modified on each doc.');
-});
+}, (arr, obj, name, resp) => {
+/*
+*	arr will be array with total docs from that part
+*	obj will be object with total docs from that part binded by _id
+*	groups will be saved into obj in the way: obj.name['Denys'] or obj.city['Kiev']
+*	name is the name of current pull from server
+*	resp is the array of responsinse with documents queried
+*/
+})
 ```
+#### replace `options`
+work as filler of each doc for cases when we can calculate things to use in website. Good example can be currencies which change each moment, we have product in one currency and we want to show it in different currrencies. Other good example can be date fields, which is saved as string and we need them in `new Date()` format.
+#### populate `options`
+works in the same way as populate of mongodb but in the client side. This works great when you need documents inside other documents and put on them sorting or other things.
+#### groups `options`
+makings arrays which show different documents inside specific placeholders. As example we can have list of users in specific town or country, so we don't have to create pipes for that.
+#### next `options`
+works as level of pulling different documents from the server. This is mostly made for performance, so user can have the info he needs directly.
 ### updateAll `function`
 connecting with waw CRUD updateAll. As parameters accepting name of mongo collection, document object, optionally options and optionally callback function which will return the document. Example:
 ```javascript

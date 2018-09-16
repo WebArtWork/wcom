@@ -1,9 +1,9 @@
-angular.module("wcom", ["wmodal_spinner.html", "wmodal_popup.html", "wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_spinner", "wcom_services", "wcom_sd", "wcom_popup", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives", "angular-click-outside"]);
+angular.module("wcom", ["wmodal_spinner.html", "wmodal_popup.html", "wmodal_modal.html", "wcom_wtags.html", "wcom_wmodaeratorsview.html", "wcom_wmodaerators.html", "wcom_spinner", "wcom_services", "wcom_sd", "wcom_popup", "wcom_mongo", "wcom_modal", "wcom_filters", "wcom_directives"]);
 angular.module("wmodal_spinner.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wmodal_spinner.html", "<!-- Comments are just to fix whitespace with inline-block --><div class=\"Spinner\"><!--    --><div class=\"Spinner-line Spinner-line--1\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--2\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--3\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!--    --><div class=\"Spinner-line Spinner-line--4\"><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--left\"></div><!--        --></div><!--        --><div class=\"Spinner-line-ticker\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--center\"></div><!--        --></div><!--        --><div class=\"Spinner-line-cog\"><!--            --><div class=\"Spinner-line-cog-inner Spinner-line-cog-inner--right\"></div><!--        --></div><!--    --></div><!----></div><!--/spinner -->");
 }]);
 angular.module("wmodal_popup.html", []).run(["$templateCache", function($templateCache) {
-	$templateCache.put("wmodal_popup.html", "<span ng-transclude ng-click=\"open()\" elsize=\"size\"></span>");
+	$templateCache.put("wmodal_popup.html", "<span ng-click-outside=\"close()\" ng-transclude ng-click=\"open($event)\" elsize=\"size\"></span>");
 }]);
 angular.module("wmodal_modal.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("wmodal_modal.html", "<div class='modal' ng-class=\"{full: full, cover: cover}\"><div class='modal_fade' ng-click='close();' title='Close'></div><div class='modal_content viewer'><i class='icon icon-close close-m' ng-click='close();' title='Close'></i><h2 ng-if=\"header\">{{header}}</h2><p ng-if=\"content\">{{content}}</p><ng-transclude></ng-transclude></div></div>");
@@ -292,12 +292,13 @@ angular.module("wcom_sd", [])
 
 angular.module("wcom_popup", [])
     .service('popup', function($compile, $rootScope) {
-        "ngInject"; 
+        "ngInject";
         var self = this;
-        this.open = function(size, config) {     
+        var event;
+        this.open = function(size, config, event) {
             if (!config || (!config.templateUrl && !config.template))
                 return console.warn('Please add templateUrl or template');
-            var popup = '<popup style="position: fixed;" config="' + (JSON.stringify(config)).split('"').join("'") + '">';
+            var popup = '<popup style="position: fixed;" config="' + (JSON.stringify(config)).split('"').join("'") + '"size="' + (JSON.stringify(size)).split('"').join("'") + '">';
             if (config.template) popup += config.template;
             else if (config.templateUrl) {
                 popup += '<ng-include src="';
@@ -306,8 +307,8 @@ angular.module("wcom_popup", [])
             }
             popup += '</popup>';
             var body = angular.element(document).find('body').eq(0);
-                body.append($compile(angular.element(popup))($rootScope));
-                angular.element(document).find('html').addClass('noscroll');
+            body.append($compile(angular.element(popup))($rootScope));
+            angular.element(document).find('html').addClass('noscroll');
         }
     }).directive('pop', function(popup) {
         "ngInject";
@@ -316,15 +317,16 @@ angular.module("wcom_popup", [])
             transclude: true,
             scope: {
                 config: '='
-            },  
+            },
             link: function($scope) {
                 $scope.size = {
-                    top: -5000,
-                    left: -5000
+                    top: 10,
+                    left: 370
                 };
-                $scope.open = function() {
+                $scope.open = function(event) {
                     //Add to scope.size span element left, top from event
-                    popup.open($scope.size, $scope.config);
+                    popup.open($scope.size, $scope.config, event);
+
                 }
             },
             templateUrl: 'wmodal_popup.html'
@@ -333,56 +335,66 @@ angular.module("wcom_popup", [])
         "ngInject";
         return {
             scope: {
-                config: '='
+                config: '=',
+                size: '='
             },
             link: function($scope) {
-            console.log($scope);
-                /*switch (size) {
+                switch ($scope.config.pos) {
                     case 'rt':
-                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
-                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight * 2);
+                        $scope.size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+                        $scope.size.top = event.clientY - event.offsetY - (event.target.offsetHeight * 2);
+                        console.log(event);
                         break;
                     case 'r':
-                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
-                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight / 2);
+                        $scope.size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+                        $scope.size.top = event.clientY - event.offsetY - (event.target.offsetHeight / 2);
+
                         break;
                     case 'rb':
-                        size.left = config.clientX - config.offsetX + config.target.offsetWidth;
-                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        $scope.size.left = event.clientX - event.offsetX + event.target.offsetWidth;
+
+                        $scope.size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+
                         break;
                     case 'b':
-                        size.left = config.clientX - config.offsetX + (config.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
-                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        $scope.size.left = event.clientX - event.offsetX + (event.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
+                         $scope.size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+
                         break;
                     case 'lb':
-                        size.left = config.clientX - config.offsetX - size.offsetWidth;
-                        size.top = config.clientY - config.offsetY + config.target.offsetHeight;
+                        $scope.size.left = event.clientX - event.offsetX - $scope.size.offsetWidth;
+                          $scope.size.top = event.clientY - event.offsetY + event.target.offsetHeight;
+
                         break;
                     case 'l':
-                        size.left = config.clientX - config.offsetX - size.offsetWidth;
-                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight / 2);
+                        $scope.size.left = event.clientX - event.offsetX - $scope.size.offsetWidth;
+                         $scope.size.top = event.clientY - event.offsetY - (event.target.offsetHeight / 2);
+
                         break;
                     case 'lt':
-                        size.left = config.clientX - config.offsetX - size.offsetWidth;
-                        size.top = config.clientY - config.offsetY - (config.target.offsetHeight * 2);
+                        $scope.size.left = event.clientX - event.offsetX - $scope.size.offsetWidth;
+                        $scope.size.top = event.clientY - event.offsetY - (event.target.offsetHeight * 2);
+
                         break;
                     case 't':
-                        size.left = config.clientX - config.offsetX + (config.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
-                        size.top = config.clientY - config.offsetY - size.offsetHeight;
+                        $scope.size.left = event.clientX - event.offsetX + (event.target.offsetWidth / 2) - ($scope.size.offsetWidth / 2);
+                        $scope.size.top = event.clientY - event.offsetY - $scope.size.offsetHeight;
+
                         break;
                     default:
-                        return self.default(config, size);
+                        return self.default($scope);
                 }
+                return [$scope.size.left, $scope.size.top];
+            
+                this.default = function($scope) {
+                    console.log(event);
+                    var top = event.clientY - event.offsetY > $scope.size.offsetHeight;
 
-                this.default = function() {
+                    var left = event.clientX - event.offsetX > $scope.size.offsetWidth;
 
-                    var top = config.clientY - config.offsetY > size.offsetHeight;
+                    var bottom = document.documentElement.clientHeight - ((event.clientX - event.offsetX) + $scope.size.offsetHeight) > $scope.size.offsetHeight;
 
-                    var left = config.clientX - config.offsetX > size.offsetWidth;
-
-                    var bottom = document.documentElement.clientHeight - ((config.clientX - config.offsetX) + size.offsetHeight) > size.offsetHeight;
-
-                    var right = document.documentElement.clientWidth - ((config.clientX - config.offsetX) + size.offsetWidth) > size.offsetWidth;
+                    var right = document.documentElement.clientWidth - ((event.clientX - event.offsetX) + $scope.size.offsetWidth) > $scope.size.offsetWidth;
 
 
 
@@ -393,36 +405,37 @@ angular.module("wcom_popup", [])
 
 
                     if (left && top) {
-                        size = 'lt';
+                        $scope.config.pos = 'lt';
                     } else if (right && top) {
-                        size = 'rt';
+                        $scope.config.pos = 'rt';
                     } else if (right && bottom) {
-                        size = 'rb';
+                        $scope.config.pos = 'rb';
                     } else if (left && bottom) {
-                        size = 'lb';
+                        $scope.config.pos = 'lb';
                     } else if (top) {
-                        size = 't';
+                        $scope.config.pos = 't';
                     } else if (right) {
-                        size = 'r';
+                        $scope.config.pos = 'r';
                     } else if (bottom) {
-                        size = 'b';
+                        $scope.config.pos = 'b';
                     } else if (left) {
-                        size = 'l';
-                    } else size = 'b';
-                    self.open(event, size, config);
-                }*/
+                        $scope.config.pos = 'l';
+                    } else $scope.config.pos = 'b';
+                    self.open($scope.size, $scope.config, event);
+                }
             }
         };
-    });
+});
 angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, socket){
 	/*
-    *    Data will be storage for all information we are pulling from waw crud.
-    *    data['arr' + part] will host all docs from collection part in array form
-    *    data['obj' + part] will host all docs from collection part in object form
-    *    data['opts' + part] will host options for docs from collection part
-    *        Will be initialized only inside get
-    *        Will be used inside push
-    */
+	*	Data will be storage for all information we are pulling from waw crud.
+	*	data['arr' + part] will host all docs from collection part in array form
+	*	data['obj' + part] will host all docs from collection part in object form
+	*		and all groups collecitons provided
+	*	data['opts' + part] will host options for docs from collection part
+	*		Will be initialized only inside get
+	*		Will be used inside push
+	*/
 		var data = {};
 	/*
 	*	waw crud connect functions
@@ -432,22 +445,21 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 				cb = doc;
 				doc = {};
 			}
-			$http.post('/api/' + part + '/create/', doc || {})
-				.then(function(resp) {
-					if (resp.data) {
-						push(part, resp.data);
-						if (typeof cb == 'function') cb(resp.data);
-					} else if (typeof cb == 'function') {
-						cb(false);
-					}
-				})
+			$http.post('/api/' + part + '/create', doc || {}).then(function(resp) {
+				if (resp.data) {
+					push(part, resp.data);
+					if (typeof cb == 'function') cb(resp.data);
+				} else if (typeof cb == 'function') {
+					cb(false);
+				}
+			});
 		};
 		this.get = function(part, opts, cb) {
 			if (typeof opts == 'function') {
 				cb = opts;
 				opts = {};
 			}
-			if(Array.isArray(data['arr' + part])){
+			if(data['loaded'+part]){
 				if(typeof cb == 'function'){
 					cb(data['arr' + part], data['obj' + part]);
 				}
@@ -455,19 +467,71 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 			data['arr' + part] = [];
 			data['obj' + part] = {};
-			data['opts' + part] = opts || {};
-			$http.get('/api/' + part + '/get')
-				.then(function(resp) {
-					if (resp.data) {
-						for (var i = 0; i < resp.data.length; i++) {
-							push(part, resp.data[i]);
+			data['opts' + part] = opts = opts || {};
+			if(opts.query){
+				for(var key in opts.query){
+					if(typeof opts.query[key] == 'function'){
+						opts.query[key] = {
+							allow: opts.query[key]
 						}
-						if (typeof cb == 'function') cb(data['arr' + part], data['obj' + part]);
-					} else if (typeof cb == 'function') {
-						cb(false);
 					}
-					data['loaded'+part]= true;
-				})
+				}
+			}
+			if(opts.groups){
+				if(typeof opts.groups == 'string'){
+					opts.groups = opts.groups.split(' ');
+				}
+				if(Array.isArray(opts.groups)){
+					var arr = opts.groups;
+					opts.groups = {};
+					for(var i = 0; i < arr.length; i++){
+						if(typeof arr[i] == 'string'){
+							opts.groups[arr[i]] = true;
+						}else {
+							for(var key in arr[i]){
+								opts.groups[key] = arr[i][key];
+							}
+						}
+					}
+				}
+				for(var key in opts.groups){
+					if(typeof opts.groups[key] == 'boolean'){
+						if(opts.groups[key]){
+							opts.groups[key] = {
+								field: function(doc){
+									return doc[key];
+								}
+							}
+						}else{
+							delete opts.groups[key];
+							continue;
+						}
+					}
+					if(typeof opts.groups[key] != 'object'){
+						delete opts.groups[key];
+						continue;
+					}
+					if(typeof opts.groups[key].field != 'function'){
+						delete opts.groups[key];
+						continue;
+					}
+				}
+			}
+			$http.get('/api/' + part + '/get').then(function(resp) {
+				if (resp.data) {
+					for (var i = 0; i < resp.data.length; i++) {
+						push(part, resp.data[i]);
+					}
+					if (typeof cb == 'function')
+						cb(data['arr' + part], data['obj' + part], opts.name||'', resp.data);
+				} else if (typeof cb == 'function') {
+					cb(data['arr' + part], data['obj' + part], opts.name||'', resp.data);
+				}
+				data['loaded'+part]= true;
+				if(opts.next){
+					next(part, opts.next, cb);
+				}
+			});
 			return data['arr' + part];
 		};
 		this.updateAll = function(part, doc, opts, cb) {
@@ -569,55 +633,55 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 				doc.updateTimeout = $timeout(cb, time || 1000);
 			}
 		};
-		var populate = this.populate = function(doc, field, part){	
-			if(!doc||!field||!part) return;
-			if(data['loaded'+part]){
+		var populate = this.populate = function(doc, field, part) {
+			if (!doc || !field || !part) return;
+			if (data['loaded' + part]) {
 				console.log(data['obj' + part]);
-				if(Array.isArray(field)){
-					for(var i = 0; i < field.length; i++){
+				if (Array.isArray(field)) {
+					for (var i = 0; i < field.length; i++) {
 						populate(doc, field[i], part);
 					}
 					return;
-				}else if(field.indexOf('.')>-1){
+				} else if (field.indexOf('.') > -1) {
 					field = field.split('.');
 					var sub = field.shift();
-					if(typeof doc[sub] != 'object') return;
+					if (typeof doc[sub] != 'object') return;
 					return populate(doc[sub], field.join('.'), part);
 				}
-				if(Array.isArray(doc[field])){
-					for(var i = doc[field].length-1; i >= 0; i--){
-						if(data['obj'+part][doc[field][i]]){
-							doc[field][i] = data['obj'+part][doc[field][i]]
-						}else{
+				if (Array.isArray(doc[field])) {
+					for (var i = doc[field].length - 1; i >= 0; i--) {
+						if (data['obj' + part][doc[field][i]]) {
+							doc[field][i] = data['obj' + part][doc[field][i]]
+						} else {
 							doc[field].splice(i, 1);
 						}
 					}
 					return;
-				}else if(typeof doc[field] == 'string'){
-					doc[field] = data['obj'+part][doc[field]] || null;
-				}else return;
-			    }else {
-	            	  $timeout(function(){
-					  populate(doc, field, part);
-				      }, 250);
-                }
-                console.log(data['obj' + part]);
-        }
-   		var on = this.on = function(parts, cb) {
-   		    if (typeof parts == 'string') {
-   		        parts = parts.split(" ");
-   		    }
-   		    for (var i = 0; i < parts.length; i++) {
-   		        if (!data['loaded'+parts[i]]) {
-   		            return $timeout(function() {
-   		                on(parts, cb);
-   		            }, 100);
-   		        } 
-   		    }
-   		    cb();
-   		}
+				} else if (typeof doc[field] == 'string') {
+					doc[field] = data['obj' + part][doc[field]] || null;
+				} else return;
+			} else {
+				$timeout(function() {
+					populate(doc, field, part);
+				}, 250);
+			}
+			console.log(data['obj' + part]);
+		};
+		var on = this.on = function(parts, cb) {
+			if (typeof parts == 'string') {
+				parts = parts.split(" ");
+			}
+			for (var i = 0; i < parts.length; i++) {
+				if (!data['loaded' + parts[i]]) {
+					return $timeout(function() {
+						on(parts, cb);
+					}, 100);
+				}
+			}
+			cb();
+		};
 	/*
-	*	mongo replace support functions
+	*	mongo replace filters
 	*/
 		this.beArr = function(val, cb) {
 			if (!Array.isArray(val)) cb([]);
@@ -628,26 +692,29 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 				val = {};
 			}
 			cb(val);
-		}
+		};
 		this.beDate = function(val, cb) {
-				cb(new Date(val) ) 
-		}
+			cb( new Date(val) );
+		};
+		this.beString = function(val, cb){
+			if(typeof val != 'string'){
+				val = '';
+			}
+			cb(val);
+		};
 		this.forceArr = function(cb) {
 			cb([]);
 		};
 		this.forceObj = function(cb) {
 			cb({});
-		}
+		};
+		this.forceString = function(val, cb){ cb(''); };
+		this.getCreated = function(val, cb, doc){
+			return new Date(parseInt(doc._id.substring(0,8), 16)*1000);
+		};
 	/*
 	*	mongo local support functions
 	*/
-		var docIndex = function(part, _id) {
-			for (i = 0; i < data['arr'+ part].length; i++) {
-				if(data['arr' + part][i]._id == _id) {
-					return i;
-				}
-			}
-		}
 		var replace = function(doc, value, rpl, part) {
 			if (value.indexOf('.') > -1) {
 				value = value.split('.');
@@ -660,10 +727,11 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			if (typeof rpl == 'function') {
 				rpl(doc[value], function(newValue) {
 					doc[value] = newValue;
-				}, doc, docIndex(part, doc._id));
+				}, doc);
 			}
 		};
 		var push = function(part, doc) {
+			if(data['obj' + part][doc._id]) return;
 			if (data['opts' + part].replace) {
 				for (var key in data['opts' + part].replace) {
 					replace(doc, key, data['opts' + part].replace[key], part);
@@ -683,7 +751,60 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			}
 			data['arr' + part].push(doc);
 			data['obj' + part][doc._id] = doc;
-		}
+			if(data['opts'+part].groups){
+				for(var key in data['opts'+part].groups){
+					var g = data['opts'+part].groups[key];
+					if(typeof g.ignore == 'function' && g.ignore(doc)) return;
+					if(typeof g.allow == 'function' && !g.allow(doc)) return;
+					if(!data['obj' + part][key]){
+						data['obj' + part][key] = {};
+					}
+					var set  = function(field){
+						if(!field) return;
+						if(!Array.isArray(data['obj' + part][key][field])){
+							data['obj' + part][key][field] = [];
+						}
+						data['obj' + part][key][field].push(doc);
+						if(typeof g.sort == 'function'){
+							data['obj' + part][key][field].sort(g.sort);
+						}
+					}
+					set(g.field(doc, function(field){
+						set(field);
+					}));
+				}
+			}
+			if(data['opts'+part].query){
+				for(var key in data['opts'+part].query){
+					var query = data['opts'+part].query[key];
+					if(typeof query.ignore == 'function' && query.ignore(doc)) return;
+					if(typeof query.allow == 'function' && !query.allow(doc)) return;
+					if(!data['obj' + part][key]){
+						data['obj' + part][key] = [];
+					}
+					data['obj' + part][key].push(doc);
+					if(typeof query.sort == 'function'){
+						data['obj' + part][key].sort(query.sort);
+					}
+				}
+			}
+		};
+		var next = function(part, opts, cb){
+			$http.get('/api/' + part + '/get').then(function(resp) {
+				if (resp.data) {
+					for (var i = 0; i < resp.data.length; i++) {
+						push(part, resp.data[i]);
+					}
+					if (typeof cb == 'function')
+						cb(data['arr' + part], data['obj' + part], opts.name||'', resp.data);
+				} else if (typeof cb == 'function') {
+					cb(data['arr' + part], data['obj' + part], opts.name||'', resp.data);
+				}
+				if(opts.next){
+					next(part, opts.next, cb);
+				}
+			});
+		};
 	/*
 	*	Endof Mongo Service
 	*/
@@ -971,126 +1092,3 @@ angular.module("wcom_directives", [])
 		}, templateUrl: 'wcom_wmodaeratorsview.html'
 	}
 });
-/*global angular, navigator*/
-
-(function() {
-    'use strict';
-
-    angular
-        .module('angular-click-outside', [])
-        .directive('clickOutside', [
-            '$document', '$parse', '$timeout',
-            clickOutside
-        ]);
-
-    /**
-     * @ngdoc directive
-     * @name angular-click-outside.directive:clickOutside
-     * @description Directive to add click outside capabilities to DOM elements
-     * @requires $document
-     * @requires $parse
-     * @requires $timeout
-     **/
-    function clickOutside($document, $parse, $timeout) {
-        return {
-            restrict: 'A',
-            link: function($scope, elem, attr) {
-
-                // postpone linking to next digest to allow for unique id generation
-                $timeout(function() {
-                    var classList = (attr.outsideIfNot !== undefined) ? attr.outsideIfNot.split(/[ ,]+/) : [],
-                        fn;
-
-                    function eventHandler(e) {
-                        var i,
-                            element,
-                            r,
-                            id,
-                            classNames,
-                            l;
-
-                        // check if our element already hidden and abort if so
-                        if (angular.element(elem).hasClass("ng-hide")) {
-                            return;
-                        }
-
-                        // if there is no click target, no point going on
-                        if (!e || !e.target) {
-                            return;
-                        }
-
-                        // loop through the available elements, looking for classes in the class list that might match and so will eat
-                        for (element = e.target; element; element = element.parentNode) {
-                            // check if the element is the same element the directive is attached to and exit if so (props @CosticaPuntaru)
-                            if (element === elem[0]) {
-                                return;
-                            }
-
-                            // now we have done the initial checks, start gathering id's and classes
-                            id = element.id,
-                                classNames = element.className,
-                                l = classList.length;
-
-                            // Unwrap SVGAnimatedString classes
-                            if (classNames && classNames.baseVal !== undefined) {
-                                classNames = classNames.baseVal;
-                            }
-
-                            // if there are no class names on the element clicked, skip the check
-                            if (classNames || id) {
-
-                                // loop through the elements id's and classnames looking for exceptions
-                                for (i = 0; i < l; i++) {
-                                    //prepare regex for class word matching
-                                    r = new RegExp('\\b' + classList[i] + '\\b');
-
-                                    // check for exact matches on id's or classes, but only if they exist in the first place
-                                    if ((id !== undefined && r.test(id)) || (classNames && r.test(classNames))) {
-                                        // now let's exit out as it is an element that has been defined as being ignored for clicking outside
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-
-                        // if we have got this far, then we are good to go with processing the command passed in via the click-outside attribute
-                        $timeout(function() {
-                            fn = $parse(attr['clickOutside']);
-                            fn($scope, {
-                                event: e
-                            });
-                        });
-                    }
-
-                    // if the devices has a touchscreen, listen for this event
-                    if (_hasTouch()) {
-                        $document.on('touchstart', function() {
-                            setTimeout(eventHandler)
-                        });
-                    }
-
-                    // still listen for the click event even if there is touch to cater for touchscreen laptops
-                    $document.on('click', eventHandler);
-
-                    // when the scope is destroyed, clean up the documents event handlers as we don't want it hanging around
-                    $scope.$on('$destroy', function() {
-                        if (_hasTouch()) {
-                            $document.off('touchstart', eventHandler);
-                        }
-
-                        $document.off('click', eventHandler);
-                    });
-
-                    /**
-                     * @description Private function to attempt to figure out if we are on a touch device
-                     * @private
-                     **/
-                    function _hasTouch() {
-                        // works on most browsers, IE10/11 and Surface
-                        return 'ontouchstart' in window || navigator.maxTouchPoints;
-                    };
-                });
-            }
-        };
-    }
-})();
