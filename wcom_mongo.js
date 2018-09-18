@@ -158,23 +158,43 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 				cb = opts;
 				opts = '';
 			}
-			$http.post('/api/' + part + '/delete' + opts, doc)
-				.then(function(resp) {
-					if (resp.data && Array.isArray(data['arr' + part])) {
-						for (var i = 0; i < data['arr' + part].length; i++) {
-							if (data['arr' + part][i]._id == doc._id) {
-								data['arr' + part].splice(i, 1);
-								break;
+			$http.post('/api/' + part + '/delete' + opts, doc).then(function(resp) {
+				if (resp.data && Array.isArray(data['arr' + part])) {
+					for (var i = 0; i < data['arr' + part].length; i++) {
+						if (data['arr' + part][i]._id == doc._id) {
+							data['arr' + part].splice(i, 1);
+							break;
+						}
+					}
+					delete data['obj' + part][doc._id];
+					if(data['opts'+part].groups){
+						for(var key in data['opts'+part].groups){
+							for(var field in data['obj' + part][key]){
+								for (var i = data['obj' + part][key][field].length-1; i >= 0 ; i--) {
+									if (data['obj' + part][key][field][i]._id == doc._id) {
+										data['obj' + part][key][field].splice(i, 1);
+									}
+								}
 							}
 						}
-						delete data['obj' + part][doc._id];
 					}
-					if (resp && typeof cb == 'function') {
-						cb(resp.data);
-					} else if (typeof cb == 'function') {
-						cb(false);
+					if(data['opts'+part].query){
+						for(var key in data['opts'+part].query){
+							for (var i = data['obj' + part][key].length-1; i >= 0 ; i--) {
+								if (data['obj' + part][key][i]._id == doc._id) {
+									data['obj' + part][key].splice(i, 1);
+									break;
+								}
+							}
+						}
 					}
-				});
+				}
+				if (resp && typeof cb == 'function') {
+					cb(resp.data);
+				} else if (typeof cb == 'function') {
+					cb(false);
+				}
+			});
 		};
 		this._id = function(cb) {
 			if (typeof cb != 'function') return;
