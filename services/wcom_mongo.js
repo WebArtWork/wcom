@@ -273,6 +273,9 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 			cb();
 		};
 	/*
+	*	mongo sort filters
+	*/
+	/*
 	*	mongo replace filters
 	*/
 		this.beArr = function(val, cb) {
@@ -374,7 +377,7 @@ angular.module("wcom_mongo", []).service('mongo', function($http, $timeout, sock
 					if(!data['obj' + part][key]){
 						data['obj' + part][key] = [];
 					}
-					data['obj' + part][key].push(doc);
+					 data['obj' + part][key].push(doc);
 					if(typeof query.sort == 'function'){
 						data['obj' + part][key].sort(query.sort);
 					}
